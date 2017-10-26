@@ -11,6 +11,8 @@ import (
 
 func TestDatabaseGet(t *testing.T) {
 	db := database.New()
+	defer db.Close()
+
 	db.Set("User", "1", newUser(1))
 	val := db.Get("User", "1")
 
@@ -19,6 +21,8 @@ func TestDatabaseGet(t *testing.T) {
 
 func TestDatabaseSet(t *testing.T) {
 	db := database.New()
+	defer db.Close()
+
 	db.Set("User", "1", newUser(1))
 
 	assert.True(t, db.Exists("User", "1"))
@@ -27,8 +31,9 @@ func TestDatabaseSet(t *testing.T) {
 
 func TestDatabaseAll(t *testing.T) {
 	db := database.New()
+	defer db.Close()
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100000; i++ {
 		db.Set("User", strconv.Itoa(i), newUser(i))
 	}
 
@@ -39,5 +44,5 @@ func TestDatabaseAll(t *testing.T) {
 		count++
 	}
 
-	assert.Equal(t, 10000, count)
+	assert.Equal(t, 100000, count)
 }

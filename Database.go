@@ -14,6 +14,16 @@ func New() *Database {
 	return &Database{}
 }
 
+// Close ...
+func (db *Database) Close() {
+	db.collections.Range(func(key, value interface{}) bool {
+		collection := value.(*Collection)
+		collection.flush()
+
+		return true
+	})
+}
+
 // Collection ...
 func (db *Database) Collection(name string) *Collection {
 	obj, found := db.collections.Load(name)

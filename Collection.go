@@ -1,33 +1,44 @@
 package database
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
 // Collection ...
 type Collection struct {
-	data          sync.Map
-	db            *Database
-	file          *os.File
-	fileMutex     sync.Mutex
-	currentOffset int64
-	offsets       map[string]int64
+	data  sync.Map
+	db    *Database
+	name  string
+	dirty chan bool
 }
 
 // NewCollection ...
 func NewCollection(db *Database, name string) *Collection {
-	file, err := os.OpenFile(name+".dat", os.O_CREATE|os.O_WRONLY, 0666)
-
-	if err != nil {
-		panic(err)
+	collection := &Collection{
+		db:    db,
+		name:  name,
+		dirty: make(chan bool, 65536),
 	}
 
-	return &Collection{
-		db:   db,
-		file: file,
-	}
+	go func() {
+		for {
+			<-collection.dirty
+
+			for len(collection.dirty) > 0 {
+				<-collection.dirty
+			}
+
+			collection.flush()
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	return collection
 }
 
 // Get ...
@@ -39,25 +50,7 @@ func (collection *Collection) Get(key string) interface{} {
 // Set ...
 func (collection *Collection) Set(key string, value interface{}) {
 	collection.data.Store(key, value)
-
-	go func() {
-		collection.fileMutex.Lock()
-		valueBytes, err := json.Marshal(value)
-
-		if err != nil {
-			panic(err)
-		}
-
-		valueBytes = append(valueBytes, '\n')
-		written, err := collection.file.WriteAt(append([]byte(key+"\n"), valueBytes...), collection.currentOffset)
-
-		if err != nil {
-			panic(err)
-		}
-
-		collection.currentOffset += int64(written)
-		collection.fileMutex.Unlock()
-	}()
+	collection.dirty <- true
 }
 
 // Delete ...
@@ -78,6 +71,39 @@ func (collection *Collection) All() chan interface{} {
 	go allValues(&collection.data, channel)
 
 	return channel
+}
+
+// flush writes all data to the file system.
+func (collection *Collection) flush() {
+	start := time.Now()
+	file, err := os.OpenFile(collection.name+".dat", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+
+	if err != nil {
+		panic(err)
+	}
+
+	file.Seek(0, 0)
+	bufferedWriter := bufio.NewWriter(file)
+
+	collection.data.Range(func(key, value interface{}) bool {
+		valueBytes, err := json.Marshal(value)
+
+		if err != nil {
+			panic(err)
+		}
+
+		bufferedWriter.WriteString(key.(string))
+		bufferedWriter.WriteByte('\n')
+
+		bufferedWriter.Write(valueBytes)
+		bufferedWriter.WriteByte('\n')
+
+		return true
+	})
+
+	bufferedWriter.Flush()
+	file.Close()
+	fmt.Println("flush", time.Since(start))
 }
 
 // allValues iterates over all values in a sync.Map and sends them to the given channel.
