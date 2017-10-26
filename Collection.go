@@ -3,6 +3,7 @@ package database
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"os"
 	"path"
 	"runtime"
@@ -13,10 +14,11 @@ import (
 
 // Collection ...
 type Collection struct {
-	data  sync.Map
-	db    *Database
-	name  string
-	dirty chan bool
+	data      sync.Map
+	db        *Database
+	name      string
+	dirty     chan bool
+	fileMutex sync.Mutex
 }
 
 // NewCollection ...
@@ -97,13 +99,16 @@ func (collection *Collection) All() chan interface{} {
 
 // flush writes all data to the file system.
 func (collection *Collection) flush() {
-	file, err := os.OpenFile(path.Join(collection.db.root, collection.name+".dat"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	collection.fileMutex.Lock()
+	defer collection.fileMutex.Unlock()
+
+	file, err := os.OpenFile(path.Join(collection.db.root, collection.name+".dat"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 
 	if err != nil {
 		panic(err)
 	}
 
-	file.Seek(0, 0)
+	file.Seek(0, io.SeekStart)
 	bufferedWriter := bufio.NewWriter(file)
 
 	records := []keyValue{}
@@ -134,8 +139,23 @@ func (collection *Collection) flush() {
 		bufferedWriter.WriteByte('\n')
 	}
 
-	bufferedWriter.Flush()
-	file.Close()
+	err = bufferedWriter.Flush()
+
+	if err != nil {
+		panic(err)
+	}
+
+	err = file.Sync()
+
+	if err != nil {
+		panic(err)
+	}
+
+	err = file.Close()
+
+	if err != nil {
+		panic(err)
+	}
 }
 
 // allValues iterates over all values in a sync.Map and sends them to the given channel.

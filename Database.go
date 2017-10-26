@@ -117,50 +117,64 @@ func (db *Database) loadFiles() {
 		panic(err)
 	}
 
+	wg := sync.WaitGroup{}
+
 	for _, file := range files {
 		if strings.HasPrefix(file.Name(), ".") || !strings.HasSuffix(file.Name(), ".dat") {
 			continue
 		}
 
-		collectionName := strings.TrimSuffix(file.Name(), ".dat")
+		wg.Add(1)
 
-		t, exists := db.types[collectionName]
+		go func(info os.FileInfo) {
+			db.loadFile(info)
+			wg.Done()
+		}(file)
+	}
 
-		if !exists {
-			panic("Type " + collectionName + " has not been defined")
+	wg.Wait()
+}
+
+// loadFile ...
+func (db *Database) loadFile(file os.FileInfo) {
+	collectionName := strings.TrimSuffix(file.Name(), ".dat")
+
+	t, exists := db.types[collectionName]
+
+	if !exists {
+		panic("Type " + collectionName + " has not been defined")
+	}
+
+	stream, err := os.OpenFile(path.Join(db.root, file.Name()), os.O_RDONLY|os.O_SYNC, 0644)
+
+	if err != nil {
+		panic(err)
+	}
+
+	collection := db.Collection(collectionName)
+
+	var key string
+	var value []byte
+
+	scanner := bufio.NewScanner(stream)
+	count := 0
+
+	for scanner.Scan() {
+		if count%2 == 0 {
+			key = scanner.Text()
+		} else {
+			value = scanner.Bytes()
+			v := reflect.New(t).Interface()
+			json.Unmarshal(value, &v)
+			collection.data.Store(key, v)
 		}
 
-		stream, err := os.OpenFile(path.Join(db.root, file.Name()), os.O_RDONLY, 0666)
+		count++
+	}
 
-		if err != nil {
-			panic(err)
-		}
+	err = scanner.Err()
 
-		collection := db.Collection(collectionName)
-
-		var key string
-		var value []byte
-
-		scanner := bufio.NewScanner(stream)
-		count := 0
-
-		for scanner.Scan() {
-			if count%2 == 0 {
-				key = scanner.Text()
-			} else {
-				value = scanner.Bytes()
-				v := reflect.New(t).Interface()
-				json.Unmarshal(value, &v)
-				collection.data.Store(key, v)
-			}
-
-			count++
-		}
-
-		err = scanner.Err()
-
-		if err != nil {
-			panic(err)
-		}
+	if err != nil {
+		panic(err)
 	}
 }
