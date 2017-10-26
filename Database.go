@@ -3,7 +3,6 @@ package database
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -39,9 +38,7 @@ func New(root string, types []interface{}) *Database {
 	}
 
 	// Load existing date from disk
-	start := time.Now()
 	db.loadFiles()
-	fmt.Println(time.Since(start))
 
 	return db
 }

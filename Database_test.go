@@ -16,8 +16,6 @@ func TestDatabaseGet(t *testing.T) {
 	defer db.Close()
 	defer db.ClearAll()
 
-	db.ClearAll()
-
 	db.Set("User", "1", newUser(1))
 	db.Set("User", "2", newUser(2))
 
