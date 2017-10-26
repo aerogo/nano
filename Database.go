@@ -7,11 +7,14 @@ import (
 // Database ...
 type Database struct {
 	collections sync.Map
+	root        string
 }
 
 // New ...
-func New() *Database {
-	return &Database{}
+func New(root string) *Database {
+	return &Database{
+		root: root,
+	}
 }
 
 // Close ...

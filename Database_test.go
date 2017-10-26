@@ -10,7 +10,7 @@ import (
 )
 
 func TestDatabaseGet(t *testing.T) {
-	db := database.New()
+	db := database.New("db")
 	defer db.Close()
 
 	db.Set("User", "1", newUser(1))
@@ -20,7 +20,7 @@ func TestDatabaseGet(t *testing.T) {
 }
 
 func TestDatabaseSet(t *testing.T) {
-	db := database.New()
+	db := database.New("db")
 	defer db.Close()
 
 	db.Set("User", "1", newUser(1))
@@ -30,7 +30,7 @@ func TestDatabaseSet(t *testing.T) {
 }
 
 func TestDatabaseAll(t *testing.T) {
-	db := database.New()
+	db := database.New("db")
 	defer db.Close()
 
 	for i := 0; i < 100000; i++ {

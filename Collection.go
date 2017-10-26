@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"runtime"
 	"sync"
 	"time"
@@ -81,7 +82,7 @@ func (collection *Collection) All() chan interface{} {
 // flush writes all data to the file system.
 func (collection *Collection) flush() {
 	start := time.Now()
-	file, err := os.OpenFile(collection.name+".dat", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	file, err := os.OpenFile(path.Join(collection.db.root, collection.name+".dat"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 
 	if err != nil {
 		panic(err)
