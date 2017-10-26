@@ -33,7 +33,7 @@ func TestDatabaseAll(t *testing.T) {
 	db := database.New("db")
 	defer db.Close()
 
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 10000; i++ {
 		db.Set("User", strconv.Itoa(i), newUser(i))
 	}
 
@@ -44,5 +44,5 @@ func TestDatabaseAll(t *testing.T) {
 		count++
 	}
 
-	assert.Equal(t, 100000, count)
+	assert.Equal(t, 10000, count)
 }
