@@ -37,6 +37,16 @@ func (db *Database) Set(collection string, key string, value interface{}) {
 	db.Collection(collection).Set(key, value)
 }
 
+// Delete ...
+func (db *Database) Delete(collection string, key string) {
+	db.Collection(collection).Delete(key)
+}
+
+// Exists ...
+func (db *Database) Exists(collection string, key string) bool {
+	return db.Collection(collection).Exists(key)
+}
+
 // All ...
 func (db *Database) All(name string) chan interface{} {
 	return db.Collection(name).All()
