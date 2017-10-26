@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -22,7 +23,7 @@ func NewCollection(db *Database, name string) *Collection {
 	collection := &Collection{
 		db:    db,
 		name:  name,
-		dirty: make(chan bool, 65536),
+		dirty: make(chan bool, runtime.NumCPU()),
 	}
 
 	go func() {
@@ -34,7 +35,7 @@ func NewCollection(db *Database, name string) *Collection {
 			}
 
 			collection.flush()
-			time.Sleep(1 * time.Second)
+			time.Sleep(250 * time.Millisecond)
 		}
 	}()
 
@@ -50,7 +51,11 @@ func (collection *Collection) Get(key string) interface{} {
 // Set ...
 func (collection *Collection) Set(key string, value interface{}) {
 	collection.data.Store(key, value)
-	collection.dirty <- true
+
+	// The potential data race here does not matter at all.
+	if len(collection.dirty) == 0 {
+		collection.dirty <- true
+	}
 }
 
 // Delete ...
