@@ -29,12 +29,13 @@ func (db *Collection) Set(key string, value interface{}) {
 func (db *Collection) All() chan interface{} {
 	channel := make(chan interface{})
 
-	go allObjects(&db.data, channel)
+	go allValues(&db.data, channel)
 
 	return channel
 }
 
-func allObjects(data *sync.Map, channel chan interface{}) {
+// allValues iterates over all values in a sync.Map and sends them to the given channel.
+func allValues(data *sync.Map, channel chan interface{}) {
 	data.Range(func(key, value interface{}) bool {
 		channel <- value
 		return true

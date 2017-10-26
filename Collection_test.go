@@ -7,9 +7,13 @@ import (
 	"github.com/aerogo/database"
 )
 
+type User struct {
+	Name string
+}
+
 func BenchmarkCollectionGet(b *testing.B) {
 	db := database.New()
-	db.Set("User", "123", "test")
+	db.Set("User", "123", &User{})
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -23,17 +27,31 @@ func BenchmarkCollectionGet(b *testing.B) {
 	})
 }
 
-func BenchmarkCollectionAll(b *testing.B) {
+func BenchmarkCollectionSet(b *testing.B) {
 	db := database.New()
-
-	for i := 0; i < 10000; i++ {
-		db.Set("User", strconv.Itoa(i), i)
-	}
+	users := db.Collection("User")
+	example := &User{}
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			users.Set("123", example)
+		}
+	})
+}
+
+func BenchmarkCollectionAll(b *testing.B) {
+	db := database.New()
 	users := db.Collection("User")
+
+	for i := 0; i < 10000; i++ {
+		users.Set(strconv.Itoa(i), &User{})
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

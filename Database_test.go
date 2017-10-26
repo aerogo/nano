@@ -11,19 +11,19 @@ import (
 	"github.com/aerogo/database"
 )
 
-func TestGet(t *testing.T) {
+func TestDatabaseGet(t *testing.T) {
 	db := database.New()
-	db.Set("User", "123", "test")
+	db.Set("User", "123", &User{})
 	val := db.Get("User", "123")
 
 	assert.NotNil(t, val)
 }
 
-func TestAll(t *testing.T) {
+func TestDatabaseAll(t *testing.T) {
 	db := database.New()
 
-	for i := 0; i < 10000; i++ {
-		db.Set("User", strconv.Itoa(i), i)
+	for i := 0; i < 1000000; i++ {
+		db.Set("User", strconv.Itoa(i), &User{})
 	}
 
 	count := 0
@@ -36,5 +36,5 @@ func TestAll(t *testing.T) {
 
 	fmt.Println(time.Since(start))
 
-	assert.Equal(t, 10000, count)
+	assert.Equal(t, 1000000, count)
 }
