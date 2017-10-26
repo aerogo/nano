@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"sort"
 	"sync"
 	"time"
 )
@@ -91,21 +92,33 @@ func (collection *Collection) flush() {
 	file.Seek(0, 0)
 	bufferedWriter := bufio.NewWriter(file)
 
+	records := []keyValue{}
+
 	collection.data.Range(func(key, value interface{}) bool {
-		valueBytes, err := json.Marshal(value)
+		records = append(records, keyValue{
+			key:   key.(string),
+			value: value,
+		})
+		return true
+	})
+
+	sort.Slice(records, func(i, j int) bool {
+		return records[i].key < records[j].key
+	})
+
+	for _, record := range records {
+		valueBytes, err := json.Marshal(record.value)
 
 		if err != nil {
 			panic(err)
 		}
 
-		bufferedWriter.WriteString(key.(string))
+		bufferedWriter.WriteString(record.key)
 		bufferedWriter.WriteByte('\n')
 
 		bufferedWriter.Write(valueBytes)
 		bufferedWriter.WriteByte('\n')
-
-		return true
-	})
+	}
 
 	bufferedWriter.Flush()
 	file.Close()

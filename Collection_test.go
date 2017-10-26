@@ -14,6 +14,7 @@ type User struct {
 	Text      string
 	Created   string
 	Edited    string
+	Following []string
 }
 
 func newUser(id int) *User {
@@ -26,8 +27,9 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet dolor
 Integer eu tortor a tellus tincidunt pretium et a urna. Integer tortor felis, rutrum vitae ipsum rutrum, laoreet maximus purus. Aliquam diam ipsum, pulvinar a leo eu, convallis ultricies urna. In consequat et eros id porta. Sed congue quam eu turpis vestibulum hendrerit. Suspendisse massa arcu, placerat sit amet tempor lobortis, ornare ut magna. Nunc sit amet gravida mi, aliquam laoreet metus. Cras non dolor at sapien euismod pulvinar ultrices eget turpis. Morbi vitae enim venenatis lacus tincidunt mollis eu non lectus. Proin nec libero porttitor, gravida turpis sed, bibendum mi. In venenatis molestie dapibus. Phasellus molestie tincidunt arcu, vel vestibulum orci dapibus in. Aliquam maximus justo eros, eu efficitur leo porta eu. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 Vivamus efficitur, libero accumsan molestie blandit, velit augue mattis enim, ut elementum arcu nulla quis eros. Sed aliquet, nibh sed dapibus porta, nisi sem efficitur purus, in sollicitudin ipsum nisi sit amet nisl. In hac habitasse platea dictumst. Nulla eu odio sit amet turpis mollis mollis finibus vitae diam. Mauris vel lorem vitae erat accumsan rhoncus eget porta libero. Curabitur tincidunt id dolor ut consectetur. Donec ornare elit sed metus malesuada fringilla. Cras purus nisl, laoreet ac risus et, consectetur consequat neque. Aliquam porttitor viverra aliquam.
 Etiam condimentum justo mi, eu hendrerit mauris ornare eget. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Morbi ac metus diam. Proin pulvinar orci at ex commodo, a blandit metus mollis. Phasellus tincidunt vel purus feugiat consequat. Proin vel accumsan massa. Cras suscipit neque dolor. Sed sit amet aliquet metus, non fringilla libero. Donec sagittis neque vel purus euismod, in tempus libero dignissim. Cras scelerisque vehicula bibendum. Maecenas augue orci, blandit posuere metus at, consectetur consectetur urna. Duis consectetur posuere est, vitae rutrum augue vehicula vitae. Aliquam id ornare odio.`,
-		Created: "2017-01-01",
-		Edited:  "2017-01-01",
+		Created:   "2017-01-01",
+		Edited:    "2017-01-01",
+		Following: []string{"Vy2Hk5yvx", "VJOK1ckvx", "VJCuoQevx", "41oBveZPx", "41w5sjZKg", "4y1WgNMDx", "NyQph5bFe", "NJ3kffzwl", "Vy2We3bKe", "VkVaI_MPl", "V1eSUNSYx", "BJdJDFgc", "r1nTQ8Ko", "BkXadrU5"},
 	}
 }
 
