@@ -3,7 +3,6 @@ package database
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"runtime"
@@ -37,7 +36,7 @@ func NewCollection(db *Database, name string) *Collection {
 			}
 
 			collection.flush()
-			time.Sleep(250 * time.Millisecond)
+			time.Sleep(db.ioSleepTime)
 		}
 	}()
 
@@ -73,7 +72,7 @@ func (collection *Collection) Exists(key string) bool {
 
 // All ...
 func (collection *Collection) All() chan interface{} {
-	channel := make(chan interface{})
+	channel := make(chan interface{}, 128)
 
 	go allValues(&collection.data, channel)
 
@@ -82,7 +81,6 @@ func (collection *Collection) All() chan interface{} {
 
 // flush writes all data to the file system.
 func (collection *Collection) flush() {
-	start := time.Now()
 	file, err := os.OpenFile(path.Join(collection.db.root, collection.name+".dat"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 
 	if err != nil {
@@ -122,7 +120,6 @@ func (collection *Collection) flush() {
 
 	bufferedWriter.Flush()
 	file.Close()
-	fmt.Println("flush", time.Since(start))
 }
 
 // allValues iterates over all values in a sync.Map and sends them to the given channel.

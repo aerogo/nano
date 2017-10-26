@@ -2,18 +2,21 @@ package database
 
 import (
 	"sync"
+	"time"
 )
 
 // Database ...
 type Database struct {
 	collections sync.Map
 	root        string
+	ioSleepTime time.Duration
 }
 
 // New ...
 func New(root string) *Database {
 	return &Database{
-		root: root,
+		root:        root,
+		ioSleepTime: 500 * time.Millisecond,
 	}
 }
 
