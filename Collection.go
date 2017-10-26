@@ -62,6 +62,22 @@ func (collection *Collection) Set(key string, value interface{}) {
 // Delete ...
 func (collection *Collection) Delete(key string) {
 	collection.data.Delete(key)
+
+	// The potential data race here does not matter at all.
+	if len(collection.dirty) == 0 {
+		collection.dirty <- true
+	}
+}
+
+// Clear deletes all objects from the collection.
+func (collection *Collection) Clear() {
+	collection.data = sync.Map{}
+	runtime.GC()
+
+	// The potential data race here does not matter at all.
+	if len(collection.dirty) == 0 {
+		collection.dirty <- true
+	}
 }
 
 // Exists ...

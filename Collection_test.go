@@ -33,9 +33,14 @@ Etiam condimentum justo mi, eu hendrerit mauris ornare eget. Vestibulum ante ips
 	}
 }
 
+var types = []interface{}{
+	(*User)(nil),
+}
+
 func BenchmarkCollectionGet(b *testing.B) {
-	db := database.New("db")
+	db := database.New("db", types)
 	defer db.Close()
+	defer db.ClearAll()
 
 	db.Set("User", "1", newUser(1))
 
@@ -52,8 +57,9 @@ func BenchmarkCollectionGet(b *testing.B) {
 }
 
 func BenchmarkCollectionSet(b *testing.B) {
-	db := database.New("db")
+	db := database.New("db", types)
 	defer db.Close()
+	defer db.ClearAll()
 
 	users := db.Collection("User")
 	example := newUser(1)
@@ -69,8 +75,9 @@ func BenchmarkCollectionSet(b *testing.B) {
 }
 
 func BenchmarkCollectionDelete(b *testing.B) {
-	db := database.New("db")
+	db := database.New("db", types)
 	defer db.Close()
+	defer db.ClearAll()
 
 	users := db.Collection("User")
 
@@ -89,8 +96,9 @@ func BenchmarkCollectionDelete(b *testing.B) {
 }
 
 func BenchmarkCollectionAll(b *testing.B) {
-	db := database.New("db")
+	db := database.New("db", types)
 	defer db.Close()
+	defer db.ClearAll()
 
 	users := db.Collection("User")
 
