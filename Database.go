@@ -37,6 +37,9 @@ func New(root string, types []interface{}) *Database {
 		types:       collectionTypes,
 	}
 
+	// Create directory
+	os.MkdirAll(root, 0777)
+
 	// Load existing date from disk
 	db.loadFiles()
 
@@ -153,25 +156,30 @@ func (db *Database) loadFile(file os.FileInfo) {
 	var key string
 	var value []byte
 
-	scanner := bufio.NewScanner(stream)
+	reader := bufio.NewReader(stream)
 	count := 0
 
-	for scanner.Scan() {
+	for {
+		line, err := reader.ReadBytes('\n')
+
+		// Remove delimiter
+		if len(line) > 0 && line[len(line)-1] == '\n' {
+			line = line[:len(line)-1]
+		}
+
 		if count%2 == 0 {
-			key = scanner.Text()
+			key = string(line)
 		} else {
-			value = scanner.Bytes()
+			value = line
 			v := reflect.New(t).Interface()
 			json.Unmarshal(value, &v)
 			collection.data.Store(key, v)
 		}
 
 		count++
-	}
 
-	err = scanner.Err()
-
-	if err != nil {
-		panic(err)
+		if err != nil {
+			break
+		}
 	}
 }
