@@ -1,10 +1,8 @@
 package database_test
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -22,19 +20,16 @@ func TestDatabaseGet(t *testing.T) {
 func TestDatabaseAll(t *testing.T) {
 	db := database.New()
 
-	for i := 0; i < 1000000; i++ {
+	for i := 0; i < 10000; i++ {
 		db.Set("User", strconv.Itoa(i), &User{})
 	}
 
 	count := 0
-	start := time.Now()
 
 	for user := range db.All("User") {
 		assert.NotNil(t, user)
 		count++
 	}
 
-	fmt.Println(time.Since(start))
-
-	assert.Equal(t, 1000000, count)
+	assert.Equal(t, 10000, count)
 }
