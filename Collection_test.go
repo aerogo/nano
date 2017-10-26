@@ -13,9 +13,9 @@ type User struct {
 	BirthYear string
 }
 
-func newUser() *User {
+func newUser(id int) *User {
 	return &User{
-		ID:        "42",
+		ID:        strconv.Itoa(id),
 		Name:      "Test User",
 		BirthYear: "1991",
 	}
@@ -23,7 +23,7 @@ func newUser() *User {
 
 func BenchmarkCollectionGet(b *testing.B) {
 	db := database.New()
-	db.Set("User", "123", newUser())
+	db.Set("User", "1", newUser(1))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -32,7 +32,7 @@ func BenchmarkCollectionGet(b *testing.B) {
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			users.Get("123")
+			users.Get("1")
 		}
 	})
 }
@@ -40,14 +40,14 @@ func BenchmarkCollectionGet(b *testing.B) {
 func BenchmarkCollectionSet(b *testing.B) {
 	db := database.New()
 	users := db.Collection("User")
-	example := newUser()
+	example := newUser(1)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			users.Set("123", example)
+			users.Set("1", example)
 		}
 	})
 }
@@ -57,7 +57,7 @@ func BenchmarkCollectionDelete(b *testing.B) {
 	users := db.Collection("User")
 
 	for i := 0; i < 10000; i++ {
-		users.Set(strconv.Itoa(i), newUser())
+		users.Set(strconv.Itoa(i), newUser(i))
 	}
 
 	b.ReportAllocs()
@@ -75,7 +75,7 @@ func BenchmarkCollectionAll(b *testing.B) {
 	users := db.Collection("User")
 
 	for i := 0; i < 10000; i++ {
-		users.Set(strconv.Itoa(i), newUser())
+		users.Set(strconv.Itoa(i), newUser(i))
 	}
 
 	b.ReportAllocs()

@@ -1,17 +1,33 @@
 package database
 
 import (
+	"encoding/json"
+	"os"
 	"sync"
 )
 
 // Collection ...
 type Collection struct {
-	data sync.Map
+	data          sync.Map
+	db            *Database
+	file          *os.File
+	fileMutex     sync.Mutex
+	currentOffset int64
+	offsets       map[string]int64
 }
 
 // NewCollection ...
-func NewCollection() *Collection {
-	return &Collection{}
+func NewCollection(db *Database, name string) *Collection {
+	file, err := os.OpenFile(name+".dat", os.O_CREATE|os.O_WRONLY, 0666)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return &Collection{
+		db:   db,
+		file: file,
+	}
 }
 
 // Get ...
@@ -23,6 +39,25 @@ func (collection *Collection) Get(key string) interface{} {
 // Set ...
 func (collection *Collection) Set(key string, value interface{}) {
 	collection.data.Store(key, value)
+
+	go func() {
+		collection.fileMutex.Lock()
+		valueBytes, err := json.Marshal(value)
+
+		if err != nil {
+			panic(err)
+		}
+
+		valueBytes = append(valueBytes, '\n')
+		written, err := collection.file.WriteAt(append([]byte(key+"\n"), valueBytes...), collection.currentOffset)
+
+		if err != nil {
+			panic(err)
+		}
+
+		collection.currentOffset += int64(written)
+		collection.fileMutex.Unlock()
+	}()
 }
 
 // Delete ...

@@ -19,7 +19,7 @@ func (db *Database) Collection(name string) *Collection {
 	obj, found := db.collections.Load(name)
 
 	if !found {
-		collection := NewCollection()
+		collection := NewCollection(db, name)
 		db.collections.Store(name, collection)
 		return collection
 	}
