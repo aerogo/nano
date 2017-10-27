@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path"
 	"reflect"
 	"strings"
@@ -21,7 +22,7 @@ type Database struct {
 }
 
 // New ...
-func New(root string, types []interface{}) *Database {
+func New(namespace string, types []interface{}) *Database {
 	// Convert example objects to their respective types
 	collectionTypes := make(map[string]reflect.Type)
 
@@ -30,15 +31,22 @@ func New(root string, types []interface{}) *Database {
 		collectionTypes[typeInfo.Name()] = typeInfo
 	}
 
+	// Create directory
+	user, err := user.Current()
+
+	if err != nil {
+		panic(err)
+	}
+
+	root := path.Join(user.HomeDir, ".aero", "db", namespace)
+	os.MkdirAll(root, 0777)
+
 	// Create database
 	db := &Database{
 		root:        root,
 		ioSleepTime: 500 * time.Millisecond,
 		types:       collectionTypes,
 	}
-
-	// Create directory
-	os.MkdirAll(root, 0777)
 
 	// Load existing date from disk
 	db.loadFiles()

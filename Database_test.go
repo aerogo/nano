@@ -12,7 +12,7 @@ import (
 )
 
 func TestDatabaseGet(t *testing.T) {
-	db := database.New("db", types)
+	db := database.New("test", types)
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -29,7 +29,7 @@ func TestDatabaseGet(t *testing.T) {
 }
 
 func TestDatabaseSet(t *testing.T) {
-	db := database.New("db", types)
+	db := database.New("test", types)
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -41,7 +41,7 @@ func TestDatabaseSet(t *testing.T) {
 }
 
 func TestDatabaseClear(t *testing.T) {
-	db := database.New("db", types)
+	db := database.New("test", types)
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -61,7 +61,7 @@ func TestDatabaseClear(t *testing.T) {
 }
 
 func TestDatabaseAll(t *testing.T) {
-	db := database.New("db", types)
+	db := database.New("test", types)
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -82,7 +82,7 @@ func TestDatabaseAll(t *testing.T) {
 }
 
 func TestDatabaseColdStart(t *testing.T) {
-	db := database.New("db", types)
+	db := database.New("test", types)
 
 	for i := 0; i < 10000; i++ {
 		db.Set("User", strconv.Itoa(i), newUser(i))
@@ -98,7 +98,7 @@ func TestDatabaseColdStart(t *testing.T) {
 	time.Sleep(1000 * time.Millisecond)
 
 	// Cold start
-	newDB := database.New("db", types)
+	newDB := database.New("test", types)
 	defer newDB.Close()
 	defer newDB.ClearAll()
 
