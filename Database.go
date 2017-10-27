@@ -83,8 +83,8 @@ func (db *Database) Set(collection string, key string, value interface{}) {
 }
 
 // Delete ...
-func (db *Database) Delete(collection string, key string) {
-	db.Collection(collection).Delete(key)
+func (db *Database) Delete(collection string, key string) bool {
+	return db.Collection(collection).Delete(key)
 }
 
 // Exists ...
@@ -120,6 +120,11 @@ func (db *Database) Close() {
 		collection.flush()
 		return true
 	})
+}
+
+// Types ...
+func (db *Database) Types() map[string]reflect.Type {
+	return db.types
 }
 
 // loadFiles ...

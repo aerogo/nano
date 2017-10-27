@@ -86,13 +86,16 @@ func (collection *Collection) Set(key string, value interface{}) {
 }
 
 // Delete ...
-func (collection *Collection) Delete(key string) {
+func (collection *Collection) Delete(key string) bool {
+	_, exists := collection.data.Load(key)
 	collection.data.Delete(key)
 
 	// The potential data race here does not matter at all.
 	if len(collection.dirty) == 0 {
 		collection.dirty <- true
 	}
+
+	return exists
 }
 
 // Clear deletes all objects from the collection.
