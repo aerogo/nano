@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/aerogo/database"
+	"github.com/aerogo/nano"
 )
 
 type User struct {
@@ -38,7 +38,7 @@ var types = []interface{}{
 }
 
 func BenchmarkCollectionGet(b *testing.B) {
-	db := database.New("test", types)
+	db := nano.New("test", types)
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -57,7 +57,7 @@ func BenchmarkCollectionGet(b *testing.B) {
 }
 
 func BenchmarkCollectionSet(b *testing.B) {
-	db := database.New("test", types)
+	db := nano.New("test", types)
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -75,7 +75,7 @@ func BenchmarkCollectionSet(b *testing.B) {
 }
 
 func BenchmarkCollectionDelete(b *testing.B) {
-	db := database.New("test", types)
+	db := nano.New("test", types)
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -96,7 +96,7 @@ func BenchmarkCollectionDelete(b *testing.B) {
 }
 
 func BenchmarkCollectionAll(b *testing.B) {
-	db := database.New("test", types)
+	db := nano.New("test", types)
 	defer db.Close()
 	defer db.ClearAll()
 

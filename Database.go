@@ -113,18 +113,21 @@ func (db *Database) ClearAll() *Database {
 	return db
 }
 
+// Types ...
+func (db *Database) Types() map[string]reflect.Type {
+	return db.types
+}
+
 // Close ...
 func (db *Database) Close() {
 	db.collections.Range(func(key, value interface{}) bool {
 		collection := value.(*Collection)
-		collection.flush()
+
+		// We simply try to acquire the lock to assure that any ongoing flush() calls have finished.
+		collection.fileMutex.Lock()
+		collection.fileMutex.Unlock()
 		return true
 	})
-}
-
-// Types ...
-func (db *Database) Types() map[string]reflect.Type {
-	return db.types
 }
 
 // loadFiles ...
