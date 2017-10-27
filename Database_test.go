@@ -19,9 +19,10 @@ func TestDatabaseGet(t *testing.T) {
 	db.Set("User", "1", newUser(1))
 	db.Set("User", "2", newUser(2))
 
-	val := db.Get("User", "1")
-	user, ok := val.(*User)
+	val, err := db.Get("User", "1")
+	assert.NoError(t, err)
 
+	user, ok := val.(*User)
 	assert.True(t, ok)
 	assert.Equal(t, "Test User", user.Name)
 

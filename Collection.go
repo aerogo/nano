@@ -3,6 +3,7 @@ package database
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"path"
@@ -49,13 +50,33 @@ func NewCollection(db *Database, name string) *Collection {
 }
 
 // Get ...
-func (collection *Collection) Get(key string) interface{} {
-	val, _ := collection.data.Load(key)
-	return val
+func (collection *Collection) Get(key string) (interface{}, error) {
+	val, ok := collection.data.Load(key)
+
+	if !ok {
+		return val, errors.New("Not found")
+	}
+
+	return val, nil
+}
+
+// GetMany ...
+func (collection *Collection) GetMany(keys []string) []interface{} {
+	values := make([]interface{}, len(keys), len(keys))
+
+	for i := 0; i < len(keys); i++ {
+		values[i], _ = collection.Get(keys[i])
+	}
+
+	return values
 }
 
 // Set ...
 func (collection *Collection) Set(key string, value interface{}) {
+	if value == nil {
+		return
+	}
+
 	collection.data.Store(key, value)
 
 	// The potential data race here does not matter at all.

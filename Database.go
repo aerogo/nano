@@ -68,8 +68,13 @@ func (db *Database) Collection(name string) *Collection {
 }
 
 // Get ...
-func (db *Database) Get(collection string, key string) interface{} {
+func (db *Database) Get(collection string, key string) (interface{}, error) {
 	return db.Collection(collection).Get(key)
+}
+
+// GetMany ...
+func (db *Database) GetMany(collection string, keys []string) []interface{} {
+	return db.Collection(collection).GetMany(keys)
 }
 
 // Set ...
