@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// ChannelBufferSize is the size of the channels used to iterate over a whole collection.
+const ChannelBufferSize = 128
+
 // Collection ...
 type Collection struct {
 	data      sync.Map
@@ -90,7 +93,7 @@ func (collection *Collection) Exists(key string) bool {
 
 // All ...
 func (collection *Collection) All() chan interface{} {
-	channel := make(chan interface{}, 128)
+	channel := make(chan interface{}, ChannelBufferSize)
 
 	go allValues(&collection.data, channel)
 
