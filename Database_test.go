@@ -1,4 +1,4 @@
-package database_test
+package nano_test
 
 import (
 	"os/exec"

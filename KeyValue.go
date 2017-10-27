@@ -1,4 +1,4 @@
-package database
+package nano
 
 type keyValue struct {
 	key   string
