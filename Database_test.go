@@ -121,8 +121,6 @@ func TestDatabaseCluster(t *testing.T) {
 		nodes[i].Close()
 	}
 
-	time.Sleep(100 * time.Millisecond)
-
 	for i := 0; i < nodeCount; i++ {
 		nodes[i].ClearAll()
 		nodes[i].Close()
