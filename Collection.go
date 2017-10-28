@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"reflect"
 	"runtime"
 	"sort"
 	"sync"
@@ -32,6 +33,8 @@ func NewCollection(db *Database, name string) *Collection {
 		name:  name,
 		dirty: make(chan bool, runtime.NumCPU()),
 	}
+
+	collection.loadFromDisk()
 
 	go func() {
 		for {
@@ -182,6 +185,56 @@ func (collection *Collection) flush() {
 
 	if err != nil {
 		panic(err)
+	}
+}
+
+// loadFromDisk ...
+func (collection *Collection) loadFromDisk() {
+	t, exists := collection.db.types[collection.name]
+
+	if !exists {
+		panic("Type " + collection.name + " has not been defined")
+	}
+
+	filePath := path.Join(collection.db.root, collection.name+".dat")
+	stream, err := os.OpenFile(filePath, os.O_RDONLY|os.O_SYNC, 0644)
+
+	if os.IsNotExist(err) {
+		return
+	}
+
+	if err != nil {
+		panic(err)
+	}
+
+	var key string
+	var value []byte
+
+	reader := bufio.NewReader(stream)
+	count := 0
+
+	for {
+		line, err := reader.ReadBytes('\n')
+
+		// Remove delimiter
+		if len(line) > 0 && line[len(line)-1] == '\n' {
+			line = line[:len(line)-1]
+		}
+
+		if count%2 == 0 {
+			key = string(line)
+		} else {
+			value = line
+			v := reflect.New(t).Interface()
+			json.Unmarshal(value, &v)
+			collection.data.Store(key, v)
+		}
+
+		count++
+
+		if err != nil {
+			break
+		}
 	}
 }
 

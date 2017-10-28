@@ -1,14 +1,10 @@
 package nano
 
 import (
-	"bufio"
-	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
 	"reflect"
-	"strings"
 	"sync"
 	"time"
 )
@@ -48,8 +44,8 @@ func New(namespace string, types []interface{}) *Database {
 		types:       collectionTypes,
 	}
 
-	// Load existing date from disk
-	db.loadFiles()
+	// Load existing data from disk
+	// db.loadFiles()
 
 	return db
 }
@@ -130,77 +126,18 @@ func (db *Database) Close() {
 	})
 }
 
-// loadFiles ...
-func (db *Database) loadFiles() {
-	files, err := ioutil.ReadDir(db.root)
-
-	if err != nil {
-		panic(err)
-	}
-
+// LoadCollections ...
+func (db *Database) LoadCollections() {
 	wg := sync.WaitGroup{}
 
-	for _, file := range files {
-		if strings.HasPrefix(file.Name(), ".") || !strings.HasSuffix(file.Name(), ".dat") {
-			continue
-		}
-
+	for typeName := range db.types {
 		wg.Add(1)
 
-		go func(info os.FileInfo) {
-			db.loadFile(info)
+		go func(name string) {
+			db.Collection(name)
 			wg.Done()
-		}(file)
+		}(typeName)
 	}
 
 	wg.Wait()
-}
-
-// loadFile ...
-func (db *Database) loadFile(file os.FileInfo) {
-	collectionName := strings.TrimSuffix(file.Name(), ".dat")
-
-	t, exists := db.types[collectionName]
-
-	if !exists {
-		panic("Type " + collectionName + " has not been defined")
-	}
-
-	stream, err := os.OpenFile(path.Join(db.root, file.Name()), os.O_RDONLY|os.O_SYNC, 0644)
-
-	if err != nil {
-		panic(err)
-	}
-
-	collection := db.Collection(collectionName)
-
-	var key string
-	var value []byte
-
-	reader := bufio.NewReader(stream)
-	count := 0
-
-	for {
-		line, err := reader.ReadBytes('\n')
-
-		// Remove delimiter
-		if len(line) > 0 && line[len(line)-1] == '\n' {
-			line = line[:len(line)-1]
-		}
-
-		if count%2 == 0 {
-			key = string(line)
-		} else {
-			value = line
-			v := reflect.New(t).Interface()
-			json.Unmarshal(value, &v)
-			collection.data.Store(key, v)
-		}
-
-		count++
-
-		if err != nil {
-			break
-		}
-	}
 }
