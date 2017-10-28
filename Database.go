@@ -9,12 +9,16 @@ import (
 	"time"
 )
 
+const startPort = 3000
+
 // Database ...
 type Database struct {
 	collections sync.Map
 	root        string
 	ioSleepTime time.Duration
 	types       map[string]reflect.Type
+	server      Server
+	client      Client
 }
 
 // New ...
@@ -44,9 +48,7 @@ func New(namespace string, types []interface{}) *Database {
 		types:       collectionTypes,
 	}
 
-	// Load existing data from disk
-	// db.loadFiles()
-
+	db.connect()
 	return db
 }
 
@@ -116,6 +118,11 @@ func (db *Database) Types() map[string]reflect.Type {
 
 // Close ...
 func (db *Database) Close() {
+	if db.client.connection != nil {
+		db.client.close <- true
+		db.client.connection = nil
+	}
+
 	db.collections.Range(func(key, value interface{}) bool {
 		collection := value.(*Collection)
 
@@ -126,8 +133,8 @@ func (db *Database) Close() {
 	})
 }
 
-// LoadCollections ...
-func (db *Database) LoadCollections() {
+// PrefetchData ...
+func (db *Database) PrefetchData() {
 	wg := sync.WaitGroup{}
 
 	for typeName := range db.types {
@@ -140,4 +147,16 @@ func (db *Database) LoadCollections() {
 	}
 
 	wg.Wait()
+}
+
+// IsMaster ...
+func (db *Database) IsMaster() bool {
+	return db.server.listener != nil
+}
+
+// connect ...
+func (db *Database) connect() {
+	if db.server.start() != nil {
+		db.client.connect()
+	}
 }

@@ -106,3 +106,25 @@ func TestDatabaseColdStart(t *testing.T) {
 		assert.True(t, newDB.Exists("User", strconv.Itoa(i)))
 	}
 }
+
+func TestDatabaseCluster(t *testing.T) {
+	nodeCount := 5
+	nodes := make([]*nano.Database, nodeCount, nodeCount)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i] = nano.New("test", types)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	for i := 1; i < nodeCount; i++ {
+		nodes[i].Close()
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i].ClearAll()
+		nodes[i].Close()
+	}
+}
