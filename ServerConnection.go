@@ -1,6 +1,9 @@
 package nano
 
-import "fmt"
+import (
+	"fmt"
+	"net"
+)
 
 // ServerConnection ...
 type ServerConnection struct {
@@ -11,13 +14,13 @@ type ServerConnection struct {
 // read ...
 func (client *ServerConnection) read() {
 	client.PacketStream.read()
-	client.server.deadConnections <- client.connection
+	client.server.deadConnections <- client.connection.(*net.TCPConn)
 }
 
 // write ...
 func (client *ServerConnection) write() {
 	client.PacketStream.write()
-	client.server.deadConnections <- client.connection
+	client.server.deadConnections <- client.connection.(*net.TCPConn)
 }
 
 // readPackets ...

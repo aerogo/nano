@@ -7,9 +7,9 @@ import (
 
 // PacketStream ...
 type PacketStream struct {
+	connection net.Conn
 	incoming   chan *Packet
 	outgoing   chan *Packet
-	connection *net.TCPConn
 }
 
 // read ...
