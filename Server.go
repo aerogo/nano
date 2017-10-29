@@ -107,8 +107,7 @@ func (server *Server) mainLoop() {
 			delete(server.connections, connection)
 
 		case msg := <-server.broadcasts:
-			for connection := range server.connections {
-				client := server.connections[connection]
+			for _, client := range server.connections {
 				client.Outgoing <- msg
 			}
 		}

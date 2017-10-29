@@ -53,14 +53,12 @@ func TestClusterBroadcast(t *testing.T) {
 	nodes[2].Set("User", "42", newUser(42))
 	time.Sleep(100 * time.Millisecond)
 
-	// Confirm that both nodes have the record now
-	user, err := nodes[0].Get("User", "42")
-	assert.NoError(t, err)
-	assert.NotNil(t, user)
-
-	user, err = nodes[2].Get("User", "42")
-	assert.NoError(t, err)
-	assert.NotNil(t, user)
+	// Confirm that all nodes have the record now
+	for i := 0; i < nodeCount; i++ {
+		user, err := nodes[i].Get("User", "42")
+		assert.NoError(t, err)
+		assert.NotNil(t, user)
+	}
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i].ClearAll()

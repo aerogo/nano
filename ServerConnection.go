@@ -48,6 +48,14 @@ func (client *ServerConnection) readPackets() {
 
 		case messageSet:
 			onSet(msg, client.server.db)
+
+			for _, targetClient := range client.server.connections {
+				if targetClient == client {
+					continue
+				}
+
+				targetClient.Outgoing <- msg
+			}
 		}
 	}
 }
