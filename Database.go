@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const startPort = 3000
-
 // Database ...
 type Database struct {
 	collections sync.Map
