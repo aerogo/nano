@@ -27,9 +27,21 @@ func (client *Client) connect() error {
 
 	go client.read()
 	go client.write()
-	// go client.waitClose()
+	go client.readPackets()
+	go client.waitClose()
 
 	return nil
+}
+
+// readPackets ...
+func (client *Client) readPackets() {
+	for packet := range client.incoming {
+		switch packet.Type {
+		case messagePing:
+			fmt.Println(string(packet.Data))
+			client.outgoing <- NewPacket(messagePong, []byte("pong"))
+		}
+	}
 }
 
 // waitClose ...
@@ -38,7 +50,6 @@ func (client *Client) waitClose() {
 
 	// client.connection will be nil after we receive this.
 	<-client.close
-	fmt.Println("CLOSE")
 
 	err := connection.Close()
 

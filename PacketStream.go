@@ -14,14 +14,14 @@ type PacketStream struct {
 
 // read ...
 func (stream *PacketStream) read() {
-	for {
-		typeBuffer := make([]byte, 1)
-		lengthBuffer := make([]byte, 8)
+	typeBuffer := make([]byte, 1)
+	lengthBuffer := make([]byte, 8)
 
+	for {
 		_, err := stream.connection.Read(typeBuffer)
 
 		if err != nil {
-			fmt.Println("R Packet Type fail", stream.connection.RemoteAddr(), err)
+			fmt.Println("R Packet Type fail", err)
 			break
 		}
 
@@ -53,6 +53,7 @@ func (stream *PacketStream) read() {
 		}
 
 		if readLength < len(data) {
+			fmt.Println("R Data read length fail", stream.connection.RemoteAddr(), err)
 			break
 		}
 
@@ -88,7 +89,5 @@ func (stream *PacketStream) write() {
 
 			totalWritten += writtenThisCall
 		}
-
-		fmt.Println(msg)
 	}
 }

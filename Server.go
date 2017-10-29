@@ -56,11 +56,12 @@ func (server *Server) mainLoop() {
 
 			go client.read()
 			go client.write()
+			go client.readPackets()
 
 			fmt.Println("New connection", connection.RemoteAddr(), "#", len(server.connections))
 
 			// Send initial packet
-			client.outgoing <- NewPacket(messageCollection, []byte("ping"))
+			client.outgoing <- NewPacket(messagePing, []byte("ping"))
 
 		case connection := <-server.deadConnections:
 			client, exists := server.connections[connection]

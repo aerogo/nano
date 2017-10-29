@@ -1,5 +1,7 @@
 package nano
 
+import "fmt"
+
 // ServerConnection ...
 type ServerConnection struct {
 	PacketStream
@@ -16,4 +18,14 @@ func (client *ServerConnection) read() {
 func (client *ServerConnection) write() {
 	client.PacketStream.write()
 	client.server.deadConnections <- client.connection
+}
+
+// readPackets ...
+func (client *ServerConnection) readPackets() {
+	for packet := range client.incoming {
+		switch packet.Type {
+		case messagePong:
+			fmt.Println(string(packet.Data))
+		}
+	}
 }
