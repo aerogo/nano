@@ -23,6 +23,7 @@ const ChannelBufferSize = 128
 // Collection ...
 type Collection struct {
 	data      sync.Map
+	dataMutex sync.Mutex
 	db        *Database
 	name      string
 	dirty     chan bool
@@ -37,7 +38,7 @@ func NewCollection(db *Database, name string) *Collection {
 		db:    db,
 		name:  name,
 		dirty: make(chan bool, runtime.NumCPU()),
-		close: make(chan bool),
+		close: make(chan bool, 1),
 	}
 
 	t, exists := collection.db.types[collection.name]
@@ -124,7 +125,9 @@ func (collection *Collection) Set(key string, value interface{}) {
 
 // set ...
 func (collection *Collection) set(key string, value interface{}) {
+	collection.dataMutex.Lock()
 	collection.data.Store(key, value)
+	collection.dataMutex.Unlock()
 
 	// The potential data race here does not matter at all.
 	if collection.db.IsMaster() && len(collection.dirty) == 0 {
@@ -135,7 +138,10 @@ func (collection *Collection) set(key string, value interface{}) {
 // Delete ...
 func (collection *Collection) Delete(key string) bool {
 	_, exists := collection.data.Load(key)
+
+	collection.dataMutex.Lock()
 	collection.data.Delete(key)
+	collection.dataMutex.Unlock()
 
 	// The potential data race here does not matter at all.
 	if len(collection.dirty) == 0 {
@@ -147,7 +153,9 @@ func (collection *Collection) Delete(key string) bool {
 
 // Clear deletes all objects from the collection.
 func (collection *Collection) Clear() {
+	collection.dataMutex.Lock()
 	collection.data = sync.Map{}
+	collection.dataMutex.Unlock()
 	runtime.GC()
 
 	// The potential data race here does not matter at all.
@@ -166,7 +174,16 @@ func (collection *Collection) Exists(key string) bool {
 func (collection *Collection) All() chan interface{} {
 	channel := make(chan interface{}, ChannelBufferSize)
 
-	go allValues(&collection.data, channel)
+	go func() {
+		collection.dataMutex.Lock()
+		collection.data.Range(func(key, value interface{}) bool {
+			channel <- value
+			return true
+		})
+		collection.dataMutex.Unlock()
+
+		close(channel)
+	}()
 
 	return channel
 }
@@ -208,6 +225,7 @@ func (collection *Collection) flush() {
 func (collection *Collection) writeRecords(bufferedWriter *bufio.Writer, sorted bool) {
 	records := []keyValue{}
 
+	collection.dataMutex.Lock()
 	collection.data.Range(func(key, value interface{}) bool {
 		records = append(records, keyValue{
 			key:   key.(string),
@@ -215,6 +233,7 @@ func (collection *Collection) writeRecords(bufferedWriter *bufio.Writer, sorted 
 		})
 		return true
 	})
+	collection.dataMutex.Unlock()
 
 	if sorted {
 		sort.Slice(records, func(i, j int) bool {
@@ -260,6 +279,9 @@ func (collection *Collection) readRecords(stream io.Reader) {
 
 	reader := bufio.NewReader(stream)
 	count := 0
+
+	collection.dataMutex.Lock()
+	defer collection.dataMutex.Unlock()
 
 	for {
 		line, err := reader.ReadBytes('\n')

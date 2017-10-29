@@ -137,6 +137,9 @@ func (db *Database) Close() {
 			collection.close <- true
 		}
 
+		collection.fileMutex.Lock()
+		collection.fileMutex.Unlock()
+
 		return true
 	})
 }
