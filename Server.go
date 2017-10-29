@@ -12,7 +12,7 @@ type Server struct {
 	connections     map[*net.TCPConn]*ServerConnection
 	newConnections  chan *net.TCPConn
 	deadConnections chan *net.TCPConn
-	broadcasts      chan []byte
+	broadcasts      chan *Packet
 }
 
 // start ...
@@ -20,7 +20,7 @@ func (server *Server) start() error {
 	server.connections = make(map[*net.TCPConn]*ServerConnection)
 	server.newConnections = make(chan *net.TCPConn, 32)
 	server.deadConnections = make(chan *net.TCPConn, 32)
-	server.broadcasts = make(chan []byte, 32)
+	server.broadcasts = make(chan *Packet, 32)
 
 	listener, err := net.Listen("tcp", ":3000")
 
@@ -41,11 +41,15 @@ func (server *Server) mainLoop() {
 	for {
 		select {
 		case connection := <-server.newConnections:
+			connection.SetNoDelay(true)
+
 			client := &ServerConnection{
-				server:     server,
-				connection: connection,
-				incoming:   make(chan []byte),
-				outgoing:   make(chan []byte),
+				server: server,
+				PacketStream: PacketStream{
+					connection: connection,
+					incoming:   make(chan *Packet),
+					outgoing:   make(chan *Packet),
+				},
 			}
 
 			server.connections[connection] = client
@@ -55,11 +59,18 @@ func (server *Server) mainLoop() {
 
 			fmt.Println("New connection", connection.RemoteAddr(), "#", len(server.connections))
 
-			client.outgoing <- []byte("ping")
+			// Send initial packet
+			client.outgoing <- NewPacket(messageCollection, []byte("ping"))
 
 		case connection := <-server.deadConnections:
-			close(server.connections[connection].incoming)
-			close(server.connections[connection].outgoing)
+			client, exists := server.connections[connection]
+
+			if !exists {
+				break
+			}
+
+			close(client.incoming)
+			close(client.outgoing)
 			connection.Close()
 			delete(server.connections, connection)
 

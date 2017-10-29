@@ -1,16 +1,15 @@
 package nano
 
 import (
+	"fmt"
 	"log"
 	"net"
 )
 
 // Client ...
 type Client struct {
-	connection *net.TCPConn
-	incoming   chan []byte
-	outgoing   chan []byte
-	close      chan bool
+	PacketStream
+	close chan bool
 }
 
 // connect ...
@@ -22,11 +21,13 @@ func (client *Client) connect() error {
 	}
 
 	client.connection = conn.(*net.TCPConn)
+	client.incoming = make(chan *Packet)
+	client.outgoing = make(chan *Packet)
 	client.close = make(chan bool)
-	client.incoming = make(chan []byte)
-	client.outgoing = make(chan []byte)
 
-	go client.waitClose()
+	go client.read()
+	go client.write()
+	// go client.waitClose()
 
 	return nil
 }
@@ -37,6 +38,7 @@ func (client *Client) waitClose() {
 
 	// client.connection will be nil after we receive this.
 	<-client.close
+	fmt.Println("CLOSE")
 
 	err := connection.Close()
 

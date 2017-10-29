@@ -88,6 +88,10 @@ func (collection *Collection) Set(key string, value interface{}) {
 	if collection.db.IsMaster() && len(collection.dirty) == 0 {
 		collection.dirty <- true
 	}
+
+	// if collection.db.IsMaster() {
+	// 	collection.db.server.broadcasts <- []byte("set\n" + key + "\n")
+	// }
 }
 
 // Delete ...
