@@ -101,7 +101,7 @@ func BenchmarkCollectionAll(b *testing.B) {
 
 	users := db.Collection("User")
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100; i++ {
 		users.Set(strconv.Itoa(i), newUser(i))
 	}
 
