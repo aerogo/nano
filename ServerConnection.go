@@ -1,8 +1,12 @@
 package nano
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net"
+	"reflect"
+	"strings"
 
 	"github.com/aerogo/packet"
 )
@@ -15,13 +19,23 @@ type ServerConnection struct {
 
 // read ...
 func (client *ServerConnection) read() {
-	client.Stream.Read()
+	err := client.Stream.Read()
+
+	if err != nil {
+		// fmt.Println(err)
+	}
+
 	client.server.deadConnections <- client.Connection.(*net.TCPConn)
 }
 
 // write ...
 func (client *ServerConnection) write() {
-	client.Stream.Write()
+	err := client.Stream.Write()
+
+	if err != nil {
+		// fmt.Println(err)
+	}
+
 	client.server.deadConnections <- client.Connection.(*net.TCPConn)
 }
 
@@ -31,6 +45,29 @@ func (client *ServerConnection) readPackets() {
 		switch msg.Type {
 		case messagePong:
 			fmt.Println(string(msg.Data))
+
+		case messageSet:
+			onSet(msg, client.server.db)
 		}
 	}
+}
+
+// onSet ...
+func onSet(msg *packet.Packet, db *Database) {
+	data := bytes.NewBuffer(msg.Data)
+
+	collectionName, _ := data.ReadString('\n')
+	collectionName = strings.TrimSuffix(collectionName, "\n")
+	collection := db.Collection(collectionName)
+
+	key, _ := data.ReadString('\n')
+	key = strings.TrimSuffix(key, "\n")
+
+	jsonBytes, _ := data.ReadBytes('\n')
+	jsonBytes = bytes.TrimSuffix(jsonBytes, []byte("\n"))
+
+	value := reflect.New(collection.typ).Interface()
+	json.Unmarshal(jsonBytes, &value)
+
+	collection.set(key, value)
 }

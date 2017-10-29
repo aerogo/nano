@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 
@@ -88,6 +87,7 @@ func (server *Server) mainLoop() {
 					writer.Flush()
 
 					client.Outgoing <- packet.New(messageCollection, b.Bytes())
+
 					wg.Done()
 				}(typeName)
 			}
@@ -123,7 +123,6 @@ func (server *Server) acceptConnections() {
 		conn, err := server.listener.Accept()
 
 		if err != nil {
-			log.Fatal("Accept error", err)
 			continue
 		}
 

@@ -2,6 +2,7 @@ package nano
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -12,6 +13,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/aerogo/packet"
 )
 
 // ChannelBufferSize is the size of the channels used to iterate over a whole collection.
@@ -24,6 +27,7 @@ type Collection struct {
 	name      string
 	dirty     chan bool
 	fileMutex sync.Mutex
+	typ       reflect.Type
 }
 
 // NewCollection ...
@@ -33,6 +37,14 @@ func NewCollection(db *Database, name string) *Collection {
 		name:  name,
 		dirty: make(chan bool, runtime.NumCPU()),
 	}
+
+	t, exists := collection.db.types[collection.name]
+
+	if !exists {
+		panic("Type " + collection.name + " has not been defined")
+	}
+
+	collection.typ = t
 
 	if db.IsMaster() {
 		collection.loadFromDisk()
@@ -82,14 +94,36 @@ func (collection *Collection) Set(key string, value interface{}) {
 		return
 	}
 
+	collection.set(key, value)
+
+	if collection.db.broadcastRequired() {
+		var buffer bytes.Buffer
+
+		jsonBytes, err := json.Marshal(value)
+
+		if err != nil {
+			panic(err)
+		}
+
+		buffer.WriteString(collection.name)
+		buffer.WriteByte('\n')
+		buffer.WriteString(key)
+		buffer.WriteByte('\n')
+		buffer.Write(jsonBytes)
+		buffer.WriteByte('\n')
+
+		collection.db.broadcast(packet.New(messageSet, buffer.Bytes()))
+	}
+}
+
+// set ...
+func (collection *Collection) set(key string, value interface{}) {
 	collection.data.Store(key, value)
 
 	// The potential data race here does not matter at all.
 	if collection.db.IsMaster() && len(collection.dirty) == 0 {
 		collection.dirty <- true
 	}
-
-	// collection.db.broadcast(packet.New(messageSet, key+"\n"+))
 }
 
 // Delete ...
@@ -214,12 +248,6 @@ func (collection *Collection) loadFromDisk() {
 
 // readRecords ...
 func (collection *Collection) readRecords(stream io.Reader) {
-	t, exists := collection.db.types[collection.name]
-
-	if !exists {
-		panic("Type " + collection.name + " has not been defined")
-	}
-
 	var key string
 	var value []byte
 
@@ -238,7 +266,7 @@ func (collection *Collection) readRecords(stream io.Reader) {
 			key = string(line)
 		} else {
 			value = line
-			v := reflect.New(t).Interface()
+			v := reflect.New(collection.typ).Interface()
 			json.Unmarshal(value, &v)
 			collection.data.Store(key, v)
 		}

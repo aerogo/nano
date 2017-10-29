@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/aerogo/packet"
 )
 
 // Database ...
@@ -119,9 +121,12 @@ func (db *Database) Types() map[string]reflect.Type {
 
 // Close ...
 func (db *Database) Close() {
-	if db.client.Connection != nil {
+	if db.client.Connection != nil && !db.client.closed {
 		db.client.close <- true
-		db.client.Connection = nil
+	}
+
+	if db.server.listener != nil {
+		db.server.listener.Close()
 	}
 
 	db.collections.Range(func(key, value interface{}) bool {
@@ -160,4 +165,18 @@ func (db *Database) connect() {
 	if db.server.start() != nil {
 		db.client.connect()
 	}
+}
+
+// broadcast ...
+func (db *Database) broadcast(msg *packet.Packet) {
+	if db.IsMaster() {
+		db.server.broadcasts <- msg
+	} else {
+		db.client.Outgoing <- msg
+	}
+}
+
+// broadcastRequired ...
+func (db *Database) broadcastRequired() bool {
+	return true
 }

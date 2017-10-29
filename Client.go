@@ -3,7 +3,6 @@ package nano
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 
@@ -13,8 +12,9 @@ import (
 // Client ...
 type Client struct {
 	packet.Stream
-	close chan bool
-	db    *Database
+	close  chan bool
+	closed bool
+	db     *Database
 }
 
 // connect ...
@@ -33,12 +33,30 @@ func (client *Client) connect() error {
 	conn.(*net.TCPConn).SetNoDelay(true)
 	conn.(*net.TCPConn).SetKeepAlive(true)
 
-	go client.Read()
-	go client.Write()
+	go client.read()
+	go client.write()
 	go client.readPackets()
 	go client.waitClose()
 
 	return nil
+}
+
+// read ...
+func (client *Client) read() {
+	err := client.Stream.Read()
+
+	if err != nil {
+		// fmt.Println(err)
+	}
+}
+
+// write ...
+func (client *Client) write() {
+	err := client.Stream.Write()
+
+	if err != nil {
+		// fmt.Println(err)
+	}
 }
 
 // readPackets ...
@@ -56,20 +74,21 @@ func (client *Client) readPackets() {
 
 			collection := client.db.Collection(collectionName)
 			collection.readRecords(data)
+
+		case messageSet:
+			onSet(msg, client.db)
 		}
 	}
 }
 
 // waitClose ...
 func (client *Client) waitClose() {
-	connection := client.Connection
-
-	// client.connection will be nil after we receive this.
 	<-client.close
 
-	err := connection.Close()
+	client.closed = true
+	err := client.Connection.Close()
 
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
