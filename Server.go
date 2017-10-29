@@ -3,18 +3,27 @@ package nano
 import (
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"strings"
 )
 
 // Server ...
 type Server struct {
-	listener    *net.TCPListener
-	connections []*net.TCPConn
+	listener        *net.TCPListener
+	connections     map[*net.TCPConn]*ServerConnection
+	newConnections  chan *net.TCPConn
+	deadConnections chan *net.TCPConn
+	broadcasts      chan []byte
 }
 
 // start ...
 func (server *Server) start() error {
+	server.connections = make(map[*net.TCPConn]*ServerConnection)
+	server.newConnections = make(chan *net.TCPConn, 32)
+	server.deadConnections = make(chan *net.TCPConn, 32)
+	server.broadcasts = make(chan []byte, 32)
+
 	listener, err := net.Listen("tcp", ":3000")
 
 	if err != nil {
@@ -22,9 +31,63 @@ func (server *Server) start() error {
 	}
 
 	server.listener = listener.(*net.TCPListener)
+
+	go server.mainLoop()
 	go server.acceptConnections()
 
 	return nil
+}
+
+// mainLoop ...
+func (server *Server) mainLoop() {
+	for {
+		select {
+		case connection := <-server.newConnections:
+			client := &ServerConnection{
+				server:     server,
+				connection: connection,
+				incoming:   make(chan []byte),
+				outgoing:   make(chan []byte),
+			}
+
+			server.connections[connection] = client
+
+			go client.read()
+			go client.write()
+
+			fmt.Println("New connection", connection.RemoteAddr(), "#", len(server.connections))
+
+			client.outgoing <- []byte("ping")
+
+		case connection := <-server.deadConnections:
+			close(server.connections[connection].incoming)
+			close(server.connections[connection].outgoing)
+			connection.Close()
+			delete(server.connections, connection)
+
+		case msg := <-server.broadcasts:
+			for connection := range server.connections {
+				client := server.connections[connection]
+				client.outgoing <- msg
+			}
+		}
+	}
+}
+
+// send ...
+func (server *Server) send(conn *net.TCPConn, msg []byte) {
+	totalWritten := 0
+
+	for totalWritten < len(msg) {
+		writtenThisCall, err := conn.Write(msg[totalWritten:])
+
+		if err != nil {
+			server.deadConnections <- conn
+			break
+		}
+
+		totalWritten += writtenThisCall
+	}
 }
 
 // acceptConnections ...
@@ -35,23 +98,16 @@ func (server *Server) acceptConnections() {
 		conn, err := server.listener.Accept()
 
 		if err != nil {
-			fmt.Println("server: Connection error", err)
+			log.Fatal("Accept error", err)
 			continue
 		}
 
-		go server.onConnection(conn.(*net.TCPConn))
+		server.newConnections <- conn.(*net.TCPConn)
 	}
 }
 
 // onConnection ...
 func (server *Server) onConnection(connection *net.TCPConn) {
-	defer connection.Close()
-
-	connection.SetNoDelay(true)
-	server.connections = append(server.connections, connection)
-
-	fmt.Println("New connection", connection.RemoteAddr(), "#", len(server.connections))
-
 	for {
 		_, err := connection.Write([]byte("ping"))
 
@@ -84,4 +140,6 @@ func (server *Server) onConnection(connection *net.TCPConn) {
 			fmt.Println(string(msg))
 		}
 	}
+
+	server.deadConnections <- connection
 }

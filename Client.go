@@ -20,9 +20,6 @@ func (client *Client) connect() error {
 	}
 
 	client.connection = conn.(*net.TCPConn)
-	client.connection.SetKeepAlive(true)
-	client.connection.SetNoDelay(true)
-
 	client.close = make(chan bool)
 
 	go client.onConnectedToServer()

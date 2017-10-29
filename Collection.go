@@ -34,20 +34,22 @@ func NewCollection(db *Database, name string) *Collection {
 		dirty: make(chan bool, runtime.NumCPU()),
 	}
 
-	collection.loadFromDisk()
+	if db.IsMaster() {
+		collection.loadFromDisk()
 
-	go func() {
-		for {
-			<-collection.dirty
-
-			for len(collection.dirty) > 0 {
+		go func() {
+			for {
 				<-collection.dirty
-			}
 
-			collection.flush()
-			time.Sleep(db.ioSleepTime)
-		}
-	}()
+				for len(collection.dirty) > 0 {
+					<-collection.dirty
+				}
+
+				collection.flush()
+				time.Sleep(db.ioSleepTime)
+			}
+		}()
+	}
 
 	return collection
 }
@@ -83,7 +85,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 	collection.data.Store(key, value)
 
 	// The potential data race here does not matter at all.
-	if len(collection.dirty) == 0 {
+	if collection.db.IsMaster() && len(collection.dirty) == 0 {
 		collection.dirty <- true
 	}
 }
