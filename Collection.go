@@ -89,9 +89,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 		collection.dirty <- true
 	}
 
-	// if collection.db.IsMaster() {
-	// 	collection.db.server.broadcasts <- []byte("set\n" + key + "\n")
-	// }
+	// collection.db.broadcast(packet.New(messageSet, key+"\n"+))
 }
 
 // Delete ...
