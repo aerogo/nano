@@ -3,7 +3,6 @@ package nano
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"net"
 	"sync"
 
@@ -64,10 +63,10 @@ func (server *Server) mainLoop() {
 			go client.write()
 			go client.readPackets()
 
-			fmt.Println("New connection", connection.RemoteAddr(), "#", len(server.connections))
+			// fmt.Println("New connection", connection.RemoteAddr(), "#", len(server.connections))
 
 			// Send initial packet
-			client.Outgoing <- packet.New(messagePing, []byte("ping"))
+			// client.Outgoing <- packet.New(messagePing, []byte("ping"))
 
 			// Send collection data
 			wg := sync.WaitGroup{}
@@ -116,8 +115,6 @@ func (server *Server) mainLoop() {
 
 // acceptConnections ...
 func (server *Server) acceptConnections() {
-	fmt.Println("server", server.listener.Addr())
-
 	for {
 		conn, err := server.listener.Accept()
 

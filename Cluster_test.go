@@ -22,7 +22,7 @@ func TestClusterDataSharing(t *testing.T) {
 	}
 
 	assert.True(t, nodes[0].IsMaster())
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 	for i := 1; i < nodeCount; i++ {
 		user, err := nodes[i].Get("User", "1")
@@ -51,7 +51,7 @@ func TestClusterBroadcast(t *testing.T) {
 
 	// Set record on node #2
 	nodes[2].Set("User", "42", newUser(42))
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 	// Confirm that all nodes have the record now
 	for i := 0; i < nodeCount; i++ {
