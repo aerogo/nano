@@ -3,6 +3,7 @@ package nano
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"net"
 	"sync"
 
@@ -17,6 +18,8 @@ type Server struct {
 	newConnections  chan *net.TCPConn
 	deadConnections chan *net.TCPConn
 	broadcasts      chan *packet.Packet
+	close           chan bool
+	closed          bool
 }
 
 // start ...
@@ -25,6 +28,7 @@ func (server *Server) start() error {
 	server.newConnections = make(chan *net.TCPConn, 32)
 	server.deadConnections = make(chan *net.TCPConn, 32)
 	server.broadcasts = make(chan *packet.Packet, 32)
+	server.close = make(chan bool)
 
 	listener, err := net.Listen("tcp", ":3000")
 
@@ -109,6 +113,16 @@ func (server *Server) mainLoop() {
 			for _, client := range server.connections {
 				client.Outgoing <- msg
 			}
+
+		case <-server.close:
+			server.closed = true
+			err := server.listener.Close()
+
+			if err != nil {
+				panic(err)
+			}
+
+			return
 		}
 	}
 }
@@ -119,7 +133,11 @@ func (server *Server) acceptConnections() {
 		conn, err := server.listener.Accept()
 
 		if err != nil {
-			continue
+			if server.closed {
+				return
+			}
+
+			fmt.Println(err)
 		}
 
 		server.newConnections <- conn.(*net.TCPConn)

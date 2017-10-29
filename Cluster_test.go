@@ -17,7 +17,7 @@ func TestClusterDataSharing(t *testing.T) {
 		nodes[i] = nano.New("test", types)
 
 		if i == 0 {
-			nodes[i].Set("User", "1", newUser(1))
+			nodes[i].Set("User", "100", newUser(100))
 		}
 	}
 
@@ -25,7 +25,7 @@ func TestClusterDataSharing(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 
 	for i := 1; i < nodeCount; i++ {
-		user, err := nodes[i].Get("User", "1")
+		user, err := nodes[i].Get("User", "100")
 		assert.NoError(t, err)
 		assert.NotNil(t, user)
 	}

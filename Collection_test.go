@@ -42,12 +42,11 @@ func BenchmarkCollectionGet(b *testing.B) {
 	defer db.Close()
 	defer db.ClearAll()
 
-	db.Set("User", "1", newUser(1))
+	users := db.Collection("User")
+	users.Set("1", newUser(1))
 
 	b.ReportAllocs()
 	b.ResetTimer()
-
-	users := db.Collection("User")
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
