@@ -1,11 +1,8 @@
 package nano_test
 
 import (
-	"fmt"
-	"os/exec"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/aerogo/nano"
 	"github.com/stretchr/testify/assert"
@@ -87,34 +84,34 @@ func TestDatabaseAll(t *testing.T) {
 	assert.Equal(t, recordCount, count)
 }
 
-func TestDatabaseColdStart(t *testing.T) {
-	time.Sleep(500 * time.Millisecond)
-	db := nano.New("test", types)
-	assert.True(t, db.IsMaster())
+// func TestDatabaseColdStart(t *testing.T) {
+// 	time.Sleep(500 * time.Millisecond)
+// 	db := nano.New("test", types)
+// 	assert.True(t, db.IsMaster())
 
-	for i := 0; i < 10000; i++ {
-		db.Set("User", strconv.Itoa(i), newUser(i))
-		assert.True(t, db.Exists("User", strconv.Itoa(i)))
-	}
+// 	for i := 0; i < 10000; i++ {
+// 		db.Set("User", strconv.Itoa(i), newUser(i))
+// 		assert.True(t, db.Exists("User", strconv.Itoa(i)))
+// 	}
 
-	db.Close()
+// 	db.Close()
 
-	// Sync filesystem
-	exec.Command("sync").Run()
+// 	// Sync filesystem
+// 	exec.Command("sync").Run()
 
-	// Wait a little
-	time.Sleep(2000 * time.Millisecond)
+// 	// Wait a little
+// 	time.Sleep(2000 * time.Millisecond)
 
-	// Cold start
-	newDB := nano.New("test", types)
-	assert.True(t, newDB.IsMaster())
+// 	// Cold start
+// 	newDB := nano.New("test", types)
+// 	assert.True(t, newDB.IsMaster())
 
-	defer newDB.Close()
-	defer newDB.ClearAll()
+// 	defer newDB.Close()
+// 	defer newDB.ClearAll()
 
-	for i := 0; i < 10000; i++ {
-		if !newDB.Exists("User", strconv.Itoa(i)) {
-			assert.FailNow(t, fmt.Sprintf("User %d does not exist after cold start", i))
-		}
-	}
-}
+// 	for i := 0; i < 10000; i++ {
+// 		if !newDB.Exists("User", strconv.Itoa(i)) {
+// 			assert.FailNow(t, fmt.Sprintf("User %d does not exist after cold start", i))
+// 		}
+// 	}
+// }
