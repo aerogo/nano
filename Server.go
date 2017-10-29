@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/aerogo/packet"
 )
 
 // Server ...
@@ -12,7 +14,7 @@ type Server struct {
 	connections     map[*net.TCPConn]*ServerConnection
 	newConnections  chan *net.TCPConn
 	deadConnections chan *net.TCPConn
-	broadcasts      chan *Packet
+	broadcasts      chan *packet.Packet
 }
 
 // start ...
@@ -20,7 +22,7 @@ func (server *Server) start() error {
 	server.connections = make(map[*net.TCPConn]*ServerConnection)
 	server.newConnections = make(chan *net.TCPConn, 32)
 	server.deadConnections = make(chan *net.TCPConn, 32)
-	server.broadcasts = make(chan *Packet, 32)
+	server.broadcasts = make(chan *packet.Packet, 32)
 
 	listener, err := net.Listen("tcp", ":3000")
 
@@ -45,10 +47,10 @@ func (server *Server) mainLoop() {
 
 			client := &ServerConnection{
 				server: server,
-				PacketStream: PacketStream{
-					connection: connection,
-					incoming:   make(chan *Packet),
-					outgoing:   make(chan *Packet),
+				Stream: packet.Stream{
+					Connection: connection,
+					Incoming:   make(chan *packet.Packet),
+					Outgoing:   make(chan *packet.Packet),
 				},
 			}
 
@@ -61,7 +63,7 @@ func (server *Server) mainLoop() {
 			fmt.Println("New connection", connection.RemoteAddr(), "#", len(server.connections))
 
 			// Send initial packet
-			client.outgoing <- NewPacket(messagePing, []byte("ping"))
+			client.Outgoing <- packet.New(messagePing, []byte("ping"))
 
 		case connection := <-server.deadConnections:
 			client, exists := server.connections[connection]
@@ -70,15 +72,15 @@ func (server *Server) mainLoop() {
 				break
 			}
 
-			close(client.incoming)
-			close(client.outgoing)
+			close(client.Incoming)
+			close(client.Outgoing)
 			connection.Close()
 			delete(server.connections, connection)
 
 		case msg := <-server.broadcasts:
 			for connection := range server.connections {
 				client := server.connections[connection]
-				client.outgoing <- msg
+				client.Outgoing <- msg
 			}
 		}
 	}

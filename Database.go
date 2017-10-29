@@ -116,9 +116,9 @@ func (db *Database) Types() map[string]reflect.Type {
 
 // Close ...
 func (db *Database) Close() {
-	if db.client.connection != nil {
+	if db.client.Connection != nil {
 		db.client.close <- true
-		db.client.connection = nil
+		db.client.Connection = nil
 	}
 
 	db.collections.Range(func(key, value interface{}) bool {

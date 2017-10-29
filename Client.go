@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/aerogo/packet"
 )
 
 // Client ...
 type Client struct {
-	PacketStream
+	packet.Stream
 	close chan bool
 }
 
@@ -20,13 +22,13 @@ func (client *Client) connect() error {
 		return err
 	}
 
-	client.connection = conn.(*net.TCPConn)
-	client.incoming = make(chan *Packet)
-	client.outgoing = make(chan *Packet)
+	client.Connection = conn.(*net.TCPConn)
+	client.Incoming = make(chan *packet.Packet)
+	client.Outgoing = make(chan *packet.Packet)
 	client.close = make(chan bool)
 
-	go client.read()
-	go client.write()
+	go client.Read()
+	go client.Write()
 	go client.readPackets()
 	go client.waitClose()
 
@@ -35,18 +37,18 @@ func (client *Client) connect() error {
 
 // readPackets ...
 func (client *Client) readPackets() {
-	for packet := range client.incoming {
-		switch packet.Type {
+	for msg := range client.Incoming {
+		switch msg.Type {
 		case messagePing:
-			fmt.Println(string(packet.Data))
-			client.outgoing <- NewPacket(messagePong, []byte("pong"))
+			fmt.Println(string(msg.Data))
+			client.Outgoing <- packet.New(messagePong, []byte("pong"))
 		}
 	}
 }
 
 // waitClose ...
 func (client *Client) waitClose() {
-	connection := client.connection
+	connection := client.Connection
 
 	// client.connection will be nil after we receive this.
 	<-client.close
