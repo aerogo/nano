@@ -44,7 +44,7 @@ func New(namespace string, types []interface{}) *Database {
 	// Create database
 	db := &Database{
 		root:        root,
-		ioSleepTime: 500 * time.Millisecond,
+		ioSleepTime: 100 * time.Millisecond,
 		types:       collectionTypes,
 	}
 
@@ -128,6 +128,8 @@ func (db *Database) Close() {
 	if db.server.listener != nil {
 		db.server.listener.Close()
 	}
+
+	time.Sleep(db.ioSleepTime)
 
 	db.collections.Range(func(key, value interface{}) bool {
 		collection := value.(*Collection)
