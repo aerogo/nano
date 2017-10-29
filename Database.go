@@ -180,5 +180,5 @@ func (db *Database) broadcast(msg *packet.Packet) {
 
 // broadcastRequired ...
 func (db *Database) broadcastRequired() bool {
-	return true
+	return db.client.Connection != nil || len(db.server.connections) > 0
 }
