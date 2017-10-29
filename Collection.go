@@ -26,6 +26,7 @@ type Collection struct {
 	db        *Database
 	name      string
 	dirty     chan bool
+	close     chan bool
 	fileMutex sync.Mutex
 	typ       reflect.Type
 }
@@ -36,6 +37,7 @@ func NewCollection(db *Database, name string) *Collection {
 		db:    db,
 		name:  name,
 		dirty: make(chan bool, runtime.NumCPU()),
+		close: make(chan bool),
 	}
 
 	t, exists := collection.db.types[collection.name]
@@ -51,14 +53,18 @@ func NewCollection(db *Database, name string) *Collection {
 
 		go func() {
 			for {
-				<-collection.dirty
+				select {
+				case <-collection.dirty:
+					for len(collection.dirty) > 0 {
+						<-collection.dirty
+					}
 
-				for len(collection.dirty) > 0 {
-					<-collection.dirty
+					collection.flush()
+					time.Sleep(db.ioSleepTime)
+
+				case <-collection.close:
+					return
 				}
-
-				collection.flush()
-				time.Sleep(db.ioSleepTime)
 			}
 		}()
 	}
@@ -198,6 +204,7 @@ func (collection *Collection) flush() {
 	}
 }
 
+// writeRecords ...
 func (collection *Collection) writeRecords(bufferedWriter *bufio.Writer, sorted bool) {
 	records := []keyValue{}
 

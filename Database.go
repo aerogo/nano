@@ -6,6 +6,7 @@ import (
 	"path"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/aerogo/packet"
@@ -125,14 +126,16 @@ func (db *Database) Close() {
 		db.client.close <- true
 	}
 
-	if db.server.listener != nil {
+	if db.server.listener != nil && !db.server.closed {
 		db.server.close <- true
 	}
 
-	// time.Sleep(db.ioSleepTime)
-
 	db.collections.Range(func(key, value interface{}) bool {
 		collection := value.(*Collection)
+
+		if db.IsMaster() {
+			collection.close <- true
+		}
 
 		// We simply try to acquire the lock to assure that any ongoing flush() calls have finished.
 		collection.fileMutex.Lock()
@@ -180,5 +183,9 @@ func (db *Database) broadcast(msg *packet.Packet) {
 
 // broadcastRequired ...
 func (db *Database) broadcastRequired() bool {
-	return db.client.Connection != nil || len(db.server.connections) > 0
+	if db.client.Connection != nil {
+		return true
+	}
+
+	return atomic.LoadInt32(&db.server.connectionCount) > 0
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/aerogo/packet"
 )
@@ -14,7 +15,8 @@ import (
 type Server struct {
 	db              *Database
 	listener        *net.TCPListener
-	connections     map[*net.TCPConn]*ServerConnection
+	connections     sync.Map
+	connectionCount int32
 	newConnections  chan *net.TCPConn
 	deadConnections chan *net.TCPConn
 	broadcasts      chan *packet.Packet
@@ -24,7 +26,6 @@ type Server struct {
 
 // start ...
 func (server *Server) start() error {
-	server.connections = make(map[*net.TCPConn]*ServerConnection)
 	server.newConnections = make(chan *net.TCPConn, 32)
 	server.deadConnections = make(chan *net.TCPConn, 32)
 	server.broadcasts = make(chan *packet.Packet, 32)
@@ -61,7 +62,8 @@ func (server *Server) mainLoop() {
 				},
 			}
 
-			server.connections[connection] = client
+			server.connections.Store(connection, client)
+			atomic.AddInt32(&server.connectionCount, 1)
 
 			go client.read()
 			go client.write()
@@ -98,20 +100,23 @@ func (server *Server) mainLoop() {
 			wg.Wait()
 
 		case connection := <-server.deadConnections:
-			client, exists := server.connections[connection]
+			obj, exists := server.connections.Load(connection)
 
 			if !exists {
 				break
 			}
 
+			client := obj.(*ServerConnection)
 			close(client.Incoming)
 			close(client.Outgoing)
 			connection.Close()
-			delete(server.connections, connection)
+
+			server.connections.Delete(connection)
+			atomic.AddInt32(&server.connectionCount, -1)
 
 		case msg := <-server.broadcasts:
-			for _, client := range server.connections {
-				client.Outgoing <- msg
+			for client := range server.AllConnections() {
+				client.(*ServerConnection).Outgoing <- msg
 			}
 
 		case <-server.close:
@@ -125,6 +130,13 @@ func (server *Server) mainLoop() {
 			return
 		}
 	}
+}
+
+// AllConnections ...
+func (server *Server) AllConnections() chan interface{} {
+	channel := make(chan interface{}, 128)
+	go allValues(&server.connections, channel)
+	return channel
 }
 
 // acceptConnections ...

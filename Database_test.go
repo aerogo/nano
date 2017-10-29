@@ -1,6 +1,7 @@
 package nano_test
 
 import (
+	"fmt"
 	"os/exec"
 	"strconv"
 	"testing"
@@ -12,6 +13,7 @@ import (
 
 func TestDatabaseGet(t *testing.T) {
 	db := nano.New("test", types)
+	assert.True(t, db.IsMaster())
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -30,6 +32,7 @@ func TestDatabaseGet(t *testing.T) {
 
 func TestDatabaseSet(t *testing.T) {
 	db := nano.New("test", types)
+	assert.True(t, db.IsMaster())
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -42,6 +45,7 @@ func TestDatabaseSet(t *testing.T) {
 
 func TestDatabaseClear(t *testing.T) {
 	db := nano.New("test", types)
+	assert.True(t, db.IsMaster())
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -62,12 +66,14 @@ func TestDatabaseClear(t *testing.T) {
 
 func TestDatabaseAll(t *testing.T) {
 	db := nano.New("test", types)
+	assert.True(t, db.IsMaster())
 	defer db.Close()
 	defer db.ClearAll()
 
 	db.Collection("User").Clear()
+	recordCount := 10000
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < recordCount; i++ {
 		db.Set("User", strconv.Itoa(i), newUser(i))
 	}
 
@@ -78,11 +84,13 @@ func TestDatabaseAll(t *testing.T) {
 		count++
 	}
 
-	assert.Equal(t, 10000, count)
+	assert.Equal(t, recordCount, count)
 }
 
 func TestDatabaseColdStart(t *testing.T) {
+	time.Sleep(500 * time.Millisecond)
 	db := nano.New("test", types)
+	assert.True(t, db.IsMaster())
 
 	for i := 0; i < 10000; i++ {
 		db.Set("User", strconv.Itoa(i), newUser(i))
@@ -99,10 +107,14 @@ func TestDatabaseColdStart(t *testing.T) {
 
 	// Cold start
 	newDB := nano.New("test", types)
+	assert.True(t, newDB.IsMaster())
+
 	defer newDB.Close()
 	defer newDB.ClearAll()
 
 	for i := 0; i < 10000; i++ {
-		assert.True(t, newDB.Exists("User", strconv.Itoa(i)))
+		if !newDB.Exists("User", strconv.Itoa(i)) {
+			assert.FailNow(t, fmt.Sprintf("User %d does not exist after cold start", i))
+		}
 	}
 }

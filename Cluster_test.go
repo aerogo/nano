@@ -17,11 +17,13 @@ func TestClusterDataSharing(t *testing.T) {
 		nodes[i] = nano.New("test", types)
 
 		if i == 0 {
+			assert.True(t, nodes[i].IsMaster())
 			nodes[i].Set("User", "100", newUser(100))
+		} else {
+			assert.False(t, nodes[i].IsMaster())
 		}
 	}
 
-	assert.True(t, nodes[0].IsMaster())
 	time.Sleep(200 * time.Millisecond)
 
 	for i := 1; i < nodeCount; i++ {
@@ -41,9 +43,14 @@ func TestClusterBroadcast(t *testing.T) {
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New("test", types)
+
+		if i == 0 {
+			assert.True(t, nodes[i].IsMaster())
+		} else {
+			assert.False(t, nodes[i].IsMaster())
+		}
 	}
 
-	assert.True(t, nodes[0].IsMaster())
 	time.Sleep(100 * time.Millisecond)
 
 	// Make sure that node #0 does not have the record

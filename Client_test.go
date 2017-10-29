@@ -17,10 +17,7 @@ func TestClientClose(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	for i := 1; i < nodeCount; i++ {
+	for i := 0; i < nodeCount; i++ {
 		nodes[i].Close()
 	}
-
-	time.Sleep(100 * time.Millisecond)
-	nodes[0].Close()
 }
