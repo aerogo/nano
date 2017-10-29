@@ -144,35 +144,7 @@ func (collection *Collection) flush() {
 
 	file.Seek(0, io.SeekStart)
 	bufferedWriter := bufio.NewWriter(file)
-
-	records := []keyValue{}
-
-	collection.data.Range(func(key, value interface{}) bool {
-		records = append(records, keyValue{
-			key:   key.(string),
-			value: value,
-		})
-		return true
-	})
-
-	sort.Slice(records, func(i, j int) bool {
-		return records[i].key < records[j].key
-	})
-
-	for _, record := range records {
-		valueBytes, err := json.Marshal(record.value)
-
-		if err != nil {
-			panic(err)
-		}
-
-		bufferedWriter.WriteString(record.key)
-		bufferedWriter.WriteByte('\n')
-
-		bufferedWriter.Write(valueBytes)
-		bufferedWriter.WriteByte('\n')
-	}
-
+	collection.writeRecords(bufferedWriter, true)
 	err = bufferedWriter.Flush()
 
 	if err != nil {
@@ -192,14 +164,40 @@ func (collection *Collection) flush() {
 	}
 }
 
-// loadFromDisk ...
-func (collection *Collection) loadFromDisk() {
-	t, exists := collection.db.types[collection.name]
+func (collection *Collection) writeRecords(bufferedWriter *bufio.Writer, sorted bool) {
+	records := []keyValue{}
 
-	if !exists {
-		panic("Type " + collection.name + " has not been defined")
+	collection.data.Range(func(key, value interface{}) bool {
+		records = append(records, keyValue{
+			key:   key.(string),
+			value: value,
+		})
+		return true
+	})
+
+	if sorted {
+		sort.Slice(records, func(i, j int) bool {
+			return records[i].key < records[j].key
+		})
 	}
 
+	for _, record := range records {
+		valueBytes, err := json.Marshal(record.value)
+
+		if err != nil {
+			panic(err)
+		}
+
+		bufferedWriter.WriteString(record.key)
+		bufferedWriter.WriteByte('\n')
+
+		bufferedWriter.Write(valueBytes)
+		bufferedWriter.WriteByte('\n')
+	}
+}
+
+// loadFromDisk ...
+func (collection *Collection) loadFromDisk() {
 	filePath := path.Join(collection.db.root, collection.name+".dat")
 	stream, err := os.OpenFile(filePath, os.O_RDONLY|os.O_SYNC, 0644)
 
@@ -209,6 +207,17 @@ func (collection *Collection) loadFromDisk() {
 
 	if err != nil {
 		panic(err)
+	}
+
+	collection.readRecords(stream)
+}
+
+// readRecords ...
+func (collection *Collection) readRecords(stream io.Reader) {
+	t, exists := collection.db.types[collection.name]
+
+	if !exists {
+		panic("Type " + collection.name + " has not been defined")
 	}
 
 	var key string

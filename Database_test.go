@@ -107,7 +107,7 @@ func TestDatabaseColdStart(t *testing.T) {
 	}
 }
 
-func TestDatabaseCluster(t *testing.T) {
+func TestClusterDataSharing(t *testing.T) {
 	nodeCount := 5
 	nodes := make([]*nano.Database, nodeCount, nodeCount)
 
@@ -119,15 +119,13 @@ func TestDatabaseCluster(t *testing.T) {
 		}
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	for i := 1; i < nodeCount; i++ {
 		user, err := nodes[i].Get("User", "1")
 		assert.NoError(t, err)
 		assert.NotNil(t, user)
 	}
-
-	time.Sleep(500 * time.Millisecond)
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i].ClearAll()

@@ -1,15 +1,19 @@
 package nano
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"log"
 	"net"
+	"sync"
 
 	"github.com/aerogo/packet"
 )
 
 // Server ...
 type Server struct {
+	db              *Database
 	listener        *net.TCPListener
 	connections     map[*net.TCPConn]*ServerConnection
 	newConnections  chan *net.TCPConn
@@ -44,6 +48,7 @@ func (server *Server) mainLoop() {
 		select {
 		case connection := <-server.newConnections:
 			connection.SetNoDelay(true)
+			connection.SetKeepAlive(true)
 
 			client := &ServerConnection{
 				server: server,
@@ -64,6 +69,30 @@ func (server *Server) mainLoop() {
 
 			// Send initial packet
 			client.Outgoing <- packet.New(messagePing, []byte("ping"))
+
+			// Send collection data
+			wg := sync.WaitGroup{}
+
+			for typeName := range server.db.types {
+				wg.Add(1)
+
+				go func(name string) {
+					collection := server.db.Collection(name)
+
+					var b bytes.Buffer
+					b.WriteString(collection.name)
+					b.WriteByte('\n')
+
+					writer := bufio.NewWriter(&b)
+					collection.writeRecords(writer, false)
+					writer.Flush()
+
+					client.Outgoing <- packet.New(messageCollection, b.Bytes())
+					wg.Done()
+				}(typeName)
+			}
+
+			wg.Wait()
 
 		case connection := <-server.deadConnections:
 			client, exists := server.connections[connection]

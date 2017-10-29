@@ -1,9 +1,11 @@
 package nano
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/aerogo/packet"
 )
@@ -12,6 +14,7 @@ import (
 type Client struct {
 	packet.Stream
 	close chan bool
+	db    *Database
 }
 
 // connect ...
@@ -22,10 +25,13 @@ func (client *Client) connect() error {
 		return err
 	}
 
-	client.Connection = conn.(*net.TCPConn)
+	client.Connection = conn
 	client.Incoming = make(chan *packet.Packet)
 	client.Outgoing = make(chan *packet.Packet)
 	client.close = make(chan bool)
+
+	conn.(*net.TCPConn).SetNoDelay(true)
+	conn.(*net.TCPConn).SetKeepAlive(true)
 
 	go client.Read()
 	go client.Write()
@@ -42,6 +48,14 @@ func (client *Client) readPackets() {
 		case messagePing:
 			fmt.Println(string(msg.Data))
 			client.Outgoing <- packet.New(messagePong, []byte("pong"))
+
+		case messageCollection:
+			data := bytes.NewBuffer(msg.Data)
+			collectionName, _ := data.ReadString('\n')
+			collectionName = strings.TrimSuffix(collectionName, "\n")
+
+			collection := client.db.Collection(collectionName)
+			collection.readRecords(data)
 		}
 	}
 }

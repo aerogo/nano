@@ -46,7 +46,10 @@ func New(namespace string, types []interface{}) *Database {
 		types:       collectionTypes,
 	}
 
+	db.server.db = db
+	db.client.db = db
 	db.connect()
+
 	return db
 }
 
