@@ -137,9 +137,6 @@ func (db *Database) Close() {
 			collection.close <- true
 		}
 
-		// We simply try to acquire the lock to assure that any ongoing flush() calls have finished.
-		collection.fileMutex.Lock()
-		collection.fileMutex.Unlock()
 		return true
 	})
 }

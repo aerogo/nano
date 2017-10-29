@@ -103,7 +103,7 @@ func TestDatabaseColdStart(t *testing.T) {
 	exec.Command("sync").Run()
 
 	// Wait a little
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(2000 * time.Millisecond)
 
 	// Cold start
 	newDB := nano.New("test", types)
