@@ -8,6 +8,8 @@ import (
 // Client ...
 type Client struct {
 	connection *net.TCPConn
+	incoming   chan []byte
+	outgoing   chan []byte
 	close      chan bool
 }
 
@@ -21,40 +23,24 @@ func (client *Client) connect() error {
 
 	client.connection = conn.(*net.TCPConn)
 	client.close = make(chan bool)
+	client.incoming = make(chan []byte)
+	client.outgoing = make(chan []byte)
 
-	go client.onConnectedToServer()
+	go client.waitClose()
 
 	return nil
 }
 
-// onConnectedToServer ...
-func (client *Client) onConnectedToServer() {
+// waitClose ...
+func (client *Client) waitClose() {
 	connection := client.connection
 
-	for {
-		select {
-		case <-client.close:
-			err := connection.Close()
+	// client.connection will be nil after we receive this.
+	<-client.close
 
-			if err != nil {
-				log.Fatal(err)
-			}
+	err := connection.Close()
 
-			return
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	// defer func() { client.closed = true }()
-	// defer client.connection.Close()
-
-	// for {
-	// 	msg := make([]byte, 1024)
-	// 	_, err := client.connection.Read(msg)
-
-	// 	if err != nil {
-	// 		continue
-	// 	}
-
-	// 	client.connection.Write([]byte("pong"))
-	// }
 }
