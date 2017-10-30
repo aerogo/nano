@@ -1,36 +1,45 @@
 package nano
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"sync"
+
 	"github.com/aerogo/cluster/server"
 	"github.com/aerogo/packet"
 )
 
-func onConnect(client *server.Client) {
-	// Send initial packet
-	client.Outgoing <- packet.New(messagePing, []byte("ping"))
+func onConnect(db *Database) func(*server.Client) {
+	return func(client *server.Client) {
+		fmt.Println("New client", client.Connection.RemoteAddr())
 
-	// // Send collection data
-	// wg := sync.WaitGroup{}
+		// // Send initial packet
+		// client.Outgoing <- packet.New(messagePing, []byte("ping"))
 
-	// for typeName := range server.db.types {
-	// 	wg.Add(1)
+		// Send collection data
+		wg := sync.WaitGroup{}
 
-	// 	go func(name string) {
-	// 		collection := server.db.Collection(name)
+		for typeName := range db.types {
+			wg.Add(1)
 
-	// 		var b bytes.Buffer
-	// 		b.WriteString(collection.name)
-	// 		b.WriteByte('\n')
+			go func(name string) {
+				collection := db.Collection(name)
 
-	// 		writer := bufio.NewWriter(&b)
-	// 		collection.writeRecords(writer, false)
-	// 		writer.Flush()
+				var b bytes.Buffer
+				b.WriteString(collection.name)
+				b.WriteByte('\n')
 
-	// 		client.Outgoing <- packet.New(messageCollection, b.Bytes())
+				writer := bufio.NewWriter(&b)
+				collection.writeRecords(writer, false)
+				writer.Flush()
 
-	// 		wg.Done()
-	// 	}(typeName)
-	// }
+				client.Outgoing <- packet.New(messageCollection, b.Bytes())
 
-	// wg.Wait()
+				wg.Done()
+			}(typeName)
+		}
+
+		wg.Wait()
+	}
 }

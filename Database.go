@@ -165,7 +165,7 @@ func (db *Database) connect() {
 
 	if db.node.IsServer() {
 		db.server = db.node.(*server.Node)
-		db.server.OnConnect(onConnect)
+		db.server.OnConnect(onConnect(db))
 	} else {
 		db.client = db.node.(*client.Node)
 	}

@@ -10,7 +10,22 @@ import (
 
 const nodeCount = 5
 
+func TestClusterClose(t *testing.T) {
+	nodes := make([]*nano.Database, nodeCount, nodeCount)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i] = nano.New("test", types)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i].Close()
+	}
+}
+
 func TestClusterDataSharing(t *testing.T) {
+	// Create cluster where the server has initial data
 	nodes := make([]*nano.Database, nodeCount, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
@@ -24,8 +39,9 @@ func TestClusterDataSharing(t *testing.T) {
 		}
 	}
 
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
+	// Check data on client nodes
 	for i := 1; i < nodeCount; i++ {
 		user, err := nodes[i].Get("User", "100")
 		assert.NoError(t, err)
@@ -38,7 +54,8 @@ func TestClusterDataSharing(t *testing.T) {
 	}
 }
 
-func TestClusterBroadcast(t *testing.T) {
+func TestClusterSet(t *testing.T) {
+	// Create cluster
 	nodes := make([]*nano.Database, nodeCount, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
