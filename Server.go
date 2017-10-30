@@ -10,9 +10,13 @@ import (
 	"github.com/aerogo/packet"
 )
 
+// onConnect ...
 func onConnect(db *Database) func(*server.Client) {
 	return func(client *server.Client) {
 		fmt.Println("New client", client.Connection.RemoteAddr())
+
+		// Start reading packets from the client
+		go serverReadPacketsFromClient(client, db)
 
 		// // Send initial packet
 		// client.Outgoing <- packet.New(messagePing, []byte("ping"))
@@ -41,5 +45,28 @@ func onConnect(db *Database) func(*server.Client) {
 		}
 
 		wg.Wait()
+	}
+}
+
+// serverReadPacketsFromClient ...
+func serverReadPacketsFromClient(client *server.Client, db *Database) {
+	for msg := range client.Incoming {
+		switch msg.Type {
+		case packetPong:
+			fmt.Println(string(msg.Data))
+
+		case packetSet:
+			onSet(msg, db)
+
+			for obj := range db.server.AllClients() {
+				targetClient := obj.(*server.Client)
+
+				if targetClient == client {
+					continue
+				}
+
+				targetClient.Outgoing <- msg
+			}
+		}
 	}
 }

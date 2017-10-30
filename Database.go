@@ -168,6 +168,7 @@ func (db *Database) connect() {
 		db.server.OnConnect(onConnect(db))
 	} else {
 		db.client = db.node.(*client.Node)
+		go clientReadPackets(db.client, db)
 	}
 }
 
