@@ -1,157 +1,31 @@
 package nano
 
-import (
-	"bufio"
-	"bytes"
-	"fmt"
-	"net"
-	"sync"
-	"sync/atomic"
+func onConnect() {
+	// // Send initial packet
+	// // client.Outgoing <- packet.New(messagePing, []byte("ping"))
 
-	"github.com/aerogo/packet"
-)
+	// // Send collection data
+	// wg := sync.WaitGroup{}
 
-// Server ...
-type Server struct {
-	db              *Database
-	listener        *net.TCPListener
-	connections     sync.Map
-	connectionCount int32
-	newConnections  chan *net.TCPConn
-	deadConnections chan *net.TCPConn
-	broadcasts      chan *packet.Packet
-	close           chan bool
-	closed          bool
-}
+	// for typeName := range server.db.types {
+	// 	wg.Add(1)
 
-// start ...
-func (server *Server) start() error {
-	server.newConnections = make(chan *net.TCPConn, 32)
-	server.deadConnections = make(chan *net.TCPConn, 32)
-	server.broadcasts = make(chan *packet.Packet, 32)
-	server.close = make(chan bool)
+	// 	go func(name string) {
+	// 		collection := server.db.Collection(name)
 
-	listener, err := net.Listen("tcp", ":3000")
+	// 		var b bytes.Buffer
+	// 		b.WriteString(collection.name)
+	// 		b.WriteByte('\n')
 
-	if err != nil {
-		return err
-	}
+	// 		writer := bufio.NewWriter(&b)
+	// 		collection.writeRecords(writer, false)
+	// 		writer.Flush()
 
-	server.listener = listener.(*net.TCPListener)
+	// 		client.Outgoing <- packet.New(messageCollection, b.Bytes())
 
-	go server.mainLoop()
-	go server.acceptConnections()
+	// 		wg.Done()
+	// 	}(typeName)
+	// }
 
-	return nil
-}
-
-// mainLoop ...
-func (server *Server) mainLoop() {
-	for {
-		select {
-		case connection := <-server.newConnections:
-			connection.SetNoDelay(true)
-			connection.SetKeepAlive(true)
-
-			client := &ServerConnection{
-				server: server,
-				Stream: packet.Stream{
-					Connection: connection,
-					Incoming:   make(chan *packet.Packet),
-					Outgoing:   make(chan *packet.Packet),
-				},
-			}
-
-			server.connections.Store(connection, client)
-			atomic.AddInt32(&server.connectionCount, 1)
-
-			go client.read()
-			go client.write()
-			go client.readPackets()
-
-			// fmt.Println("New connection", connection.RemoteAddr(), "#", len(server.connections))
-
-			// Send initial packet
-			// client.Outgoing <- packet.New(messagePing, []byte("ping"))
-
-			// Send collection data
-			wg := sync.WaitGroup{}
-
-			for typeName := range server.db.types {
-				wg.Add(1)
-
-				go func(name string) {
-					collection := server.db.Collection(name)
-
-					var b bytes.Buffer
-					b.WriteString(collection.name)
-					b.WriteByte('\n')
-
-					writer := bufio.NewWriter(&b)
-					collection.writeRecords(writer, false)
-					writer.Flush()
-
-					client.Outgoing <- packet.New(messageCollection, b.Bytes())
-
-					wg.Done()
-				}(typeName)
-			}
-
-			wg.Wait()
-
-		case connection := <-server.deadConnections:
-			obj, exists := server.connections.Load(connection)
-
-			if !exists {
-				break
-			}
-
-			client := obj.(*ServerConnection)
-			close(client.Incoming)
-			close(client.Outgoing)
-			connection.Close()
-
-			server.connections.Delete(connection)
-			atomic.AddInt32(&server.connectionCount, -1)
-
-		case msg := <-server.broadcasts:
-			for client := range server.AllConnections() {
-				client.(*ServerConnection).Outgoing <- msg
-			}
-
-		case <-server.close:
-			server.closed = true
-			err := server.listener.Close()
-
-			if err != nil {
-				panic(err)
-			}
-
-			return
-		}
-	}
-}
-
-// AllConnections ...
-func (server *Server) AllConnections() chan interface{} {
-	channel := make(chan interface{}, 128)
-	go allValues(&server.connections, channel)
-	return channel
-}
-
-// acceptConnections ...
-func (server *Server) acceptConnections() {
-	for {
-		conn, err := server.listener.Accept()
-
-		if err != nil {
-			if server.closed {
-				return
-			}
-
-			fmt.Println(err)
-		}
-
-		server.newConnections <- conn.(*net.TCPConn)
-	}
+	// wg.Wait()
 }

@@ -3,64 +3,34 @@ package nano
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"net"
 	"reflect"
 	"strings"
 
 	"github.com/aerogo/packet"
 )
 
-// ServerConnection ...
-type ServerConnection struct {
-	packet.Stream
-	server *Server
-}
+// // readPackets ...
+// func readPackets(client *server.Client) {
+// 	for msg := range client.Incoming {
+// 		switch msg.Type {
+// 		case messagePong:
+// 			fmt.Println(string(msg.Data))
 
-// read ...
-func (client *ServerConnection) read() {
-	err := client.Stream.Read()
+// 		case messageSet:
+// 			onSet(msg, client.server.db)
 
-	if err != nil {
-		// fmt.Println(err)
-	}
+// 			for obj := range client.server.AllConnections() {
+// 				targetClient := obj.(*ServerConnection)
 
-	client.server.deadConnections <- client.Connection.(*net.TCPConn)
-}
+// 				if targetClient == client {
+// 					continue
+// 				}
 
-// write ...
-func (client *ServerConnection) write() {
-	err := client.Stream.Write()
-
-	if err != nil {
-		// fmt.Println(err)
-	}
-
-	client.server.deadConnections <- client.Connection.(*net.TCPConn)
-}
-
-// readPackets ...
-func (client *ServerConnection) readPackets() {
-	for msg := range client.Incoming {
-		switch msg.Type {
-		case messagePong:
-			fmt.Println(string(msg.Data))
-
-		case messageSet:
-			onSet(msg, client.server.db)
-
-			for obj := range client.server.AllConnections() {
-				targetClient := obj.(*ServerConnection)
-
-				if targetClient == client {
-					continue
-				}
-
-				targetClient.Outgoing <- msg
-			}
-		}
-	}
-}
+// 				targetClient.Outgoing <- msg
+// 			}
+// 		}
+// 	}
+// }
 
 // onSet ...
 func onSet(msg *packet.Packet, db *Database) {

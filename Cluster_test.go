@@ -17,10 +17,10 @@ func TestClusterDataSharing(t *testing.T) {
 		nodes[i] = nano.New("test", types)
 
 		if i == 0 {
-			assert.True(t, nodes[i].IsMaster())
+			assert.True(t, nodes[i].Node().IsServer())
 			nodes[i].Set("User", "100", newUser(100))
 		} else {
-			assert.False(t, nodes[i].IsMaster())
+			assert.False(t, nodes[i].Node().IsServer())
 		}
 	}
 
@@ -45,9 +45,9 @@ func TestClusterBroadcast(t *testing.T) {
 		nodes[i] = nano.New("test", types)
 
 		if i == 0 {
-			assert.True(t, nodes[i].IsMaster())
+			assert.True(t, nodes[i].Node().IsServer())
 		} else {
-			assert.False(t, nodes[i].IsMaster())
+			assert.False(t, nodes[i].Node().IsServer())
 		}
 	}
 

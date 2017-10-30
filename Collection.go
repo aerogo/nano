@@ -48,7 +48,7 @@ func NewCollection(db *Database, name string) *Collection {
 
 	collection.typ = t
 
-	if db.IsMaster() {
+	if db.node.IsServer() {
 		collection.loadFromDisk()
 
 		go func() {
@@ -118,7 +118,8 @@ func (collection *Collection) Set(key string, value interface{}) {
 		buffer.Write(jsonBytes)
 		buffer.WriteByte('\n')
 
-		collection.db.broadcast(packet.New(messageSet, buffer.Bytes()))
+		msg := packet.New(messageSet, buffer.Bytes())
+		collection.db.node.Broadcast(msg)
 	}
 }
 
@@ -126,7 +127,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 func (collection *Collection) set(key string, value interface{}) {
 	collection.data.Store(key, value)
 
-	if collection.db.IsMaster() && len(collection.dirty) == 0 {
+	if collection.db.node.IsServer() && len(collection.dirty) == 0 {
 		collection.dirty <- true
 	}
 }

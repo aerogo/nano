@@ -3,6 +3,7 @@ package nano_test
 import (
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/aerogo/nano"
 	"github.com/stretchr/testify/assert"
@@ -10,7 +11,7 @@ import (
 
 func TestDatabaseGet(t *testing.T) {
 	db := nano.New("test", types)
-	assert.True(t, db.IsMaster())
+	assert.True(t, db.Node().IsServer())
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -29,7 +30,7 @@ func TestDatabaseGet(t *testing.T) {
 
 func TestDatabaseSet(t *testing.T) {
 	db := nano.New("test", types)
-	assert.True(t, db.IsMaster())
+	assert.True(t, db.Node().IsServer())
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -42,7 +43,7 @@ func TestDatabaseSet(t *testing.T) {
 
 func TestDatabaseClear(t *testing.T) {
 	db := nano.New("test", types)
-	assert.True(t, db.IsMaster())
+	assert.True(t, db.Node().IsServer())
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -63,7 +64,7 @@ func TestDatabaseClear(t *testing.T) {
 
 func TestDatabaseAll(t *testing.T) {
 	db := nano.New("test", types)
-	assert.True(t, db.IsMaster())
+	assert.True(t, db.Node().IsServer())
 	defer db.Close()
 	defer db.ClearAll()
 
@@ -84,10 +85,21 @@ func TestDatabaseAll(t *testing.T) {
 	assert.Equal(t, recordCount, count)
 }
 
+func TestDatabaseClose(t *testing.T) {
+	db := nano.New("test", types)
+	assert.True(t, db.Node().IsServer())
+	assert.False(t, db.Node().IsClosed())
+
+	db.Close()
+
+	time.Sleep(100 * time.Millisecond)
+	assert.True(t, db.Node().IsClosed())
+}
+
 // func TestDatabaseColdStart(t *testing.T) {
 // 	time.Sleep(500 * time.Millisecond)
 // 	db := nano.New("test", types)
-// 	assert.True(t, db.IsMaster())
+// 	assert.True(t, db.Node().IsServer())
 
 // 	for i := 0; i < 10000; i++ {
 // 		db.Set("User", strconv.Itoa(i), newUser(i))
@@ -104,7 +116,7 @@ func TestDatabaseAll(t *testing.T) {
 
 // 	// Cold start
 // 	newDB := nano.New("test", types)
-// 	assert.True(t, newDB.IsMaster())
+// 	assert.True(t, newdb.Node().IsServer())
 
 // 	defer newDB.Close()
 // 	defer newDB.ClearAll()

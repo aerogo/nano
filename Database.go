@@ -6,10 +6,11 @@ import (
 	"path"
 	"reflect"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/aerogo/packet"
+	"github.com/aerogo/cluster"
+	"github.com/aerogo/cluster/client"
+	"github.com/aerogo/cluster/server"
 )
 
 // Database ...
@@ -18,8 +19,9 @@ type Database struct {
 	root        string
 	ioSleepTime time.Duration
 	types       map[string]reflect.Type
-	server      Server
-	client      Client
+	node        cluster.Node
+	server      *server.Node
+	client      *client.Node
 }
 
 // New ...
@@ -49,8 +51,6 @@ func New(namespace string, types []interface{}) *Database {
 		types:       collectionTypes,
 	}
 
-	db.server.db = db
-	db.client.db = db
 	db.connect()
 
 	return db
@@ -120,20 +120,19 @@ func (db *Database) Types() map[string]reflect.Type {
 	return db.types
 }
 
+// Node ...
+func (db *Database) Node() cluster.Node {
+	return db.node
+}
+
 // Close ...
 func (db *Database) Close() {
-	if db.client.Connection != nil && !db.client.closed {
-		db.client.close <- true
-	}
-
-	if db.server.listener != nil && !db.server.closed {
-		db.server.close <- true
-	}
+	db.node.Close()
 
 	db.collections.Range(func(key, value interface{}) bool {
 		collection := value.(*Collection)
 
-		if db.IsMaster() {
+		if db.node.IsServer() {
 			collection.close <- true
 		}
 
@@ -160,32 +159,22 @@ func (db *Database) PrefetchData() {
 	wg.Wait()
 }
 
-// IsMaster ...
-func (db *Database) IsMaster() bool {
-	return db.server.listener != nil
-}
-
 // connect ...
 func (db *Database) connect() {
-	if db.server.start() != nil {
-		db.client.connect()
-	}
-}
+	db.node = cluster.New(3000)
 
-// broadcast ...
-func (db *Database) broadcast(msg *packet.Packet) {
-	if db.IsMaster() {
-		db.server.broadcasts <- msg
+	if db.node.IsServer() {
+		db.server = db.node.(*server.Node)
 	} else {
-		db.client.Outgoing <- msg
+		db.client = db.node.(*client.Node)
 	}
 }
 
 // broadcastRequired ...
 func (db *Database) broadcastRequired() bool {
-	if db.client.Connection != nil {
+	if !db.node.IsServer() {
 		return true
 	}
 
-	return atomic.LoadInt32(&db.server.connectionCount) > 0
+	return db.server.ClientCount() > 0
 }
