@@ -1,8 +1,13 @@
 package nano
 
-func onConnect() {
-	// // Send initial packet
-	// // client.Outgoing <- packet.New(messagePing, []byte("ping"))
+import (
+	"github.com/aerogo/cluster/server"
+	"github.com/aerogo/packet"
+)
+
+func onConnect(client *server.Client) {
+	// Send initial packet
+	client.Outgoing <- packet.New(messagePing, []byte("ping"))
 
 	// // Send collection data
 	// wg := sync.WaitGroup{}
