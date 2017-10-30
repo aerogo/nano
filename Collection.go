@@ -118,7 +118,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 		buffer.Write(jsonBytes)
 		buffer.WriteByte('\n')
 
-		msg := packet.New(messageSet, buffer.Bytes())
+		msg := packet.New(packetSet, buffer.Bytes())
 		collection.db.node.Broadcast(msg)
 	}
 }

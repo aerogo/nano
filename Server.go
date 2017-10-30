@@ -34,7 +34,7 @@ func onConnect(db *Database) func(*server.Client) {
 				collection.writeRecords(writer, false)
 				writer.Flush()
 
-				client.Outgoing <- packet.New(messageCollection, b.Bytes())
+				client.Outgoing <- packet.New(packetCollection, b.Bytes())
 
 				wg.Done()
 			}(typeName)
