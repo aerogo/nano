@@ -17,7 +17,10 @@ func TestClusterClose(t *testing.T) {
 		nodes[i] = nano.New()
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	// Wait for clients to connect
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i].Close()
@@ -40,7 +43,10 @@ func TestClusterDataSharing(t *testing.T) {
 		}
 	}
 
-	time.Sleep(300 * time.Millisecond)
+	// Wait for clients to connect
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	// Check data on client nodes
 	for i := 1; i < nodeCount; i++ {
@@ -70,14 +76,17 @@ func TestClusterSet(t *testing.T) {
 		}
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	// Wait for clients to connect
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	// Make sure that node #0 does not have the record
 	nodes[0].Namespace("test").Delete("User", "42")
 
-	// Set record on node #2
-	nodes[2].Namespace("test").Set("User", "42", newUser(42))
-	time.Sleep(200 * time.Millisecond)
+	// Set record on node #1
+	nodes[1].Namespace("test").Set("User", "42", newUser(42))
+	time.Sleep(400 * time.Millisecond)
 
 	// Confirm that all nodes have the record now
 	for i := 0; i < nodeCount; i++ {

@@ -1,6 +1,7 @@
 package nano
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -57,6 +58,33 @@ func serverReadPacketsFromClient(client *server.Client, db *Node) {
 		case packetPong:
 			fmt.Println(string(msg.Data))
 
+		case packetCollectionRequest:
+			data := bytes.NewBuffer(msg.Data)
+
+			namespaceName, _ := data.ReadString('\n')
+			namespaceName = strings.TrimSuffix(namespaceName, "\n")
+
+			namespace := db.Namespace(namespaceName)
+
+			collectionName, _ := data.ReadString('\n')
+			collectionName = strings.TrimSuffix(collectionName, "\n")
+
+			collection := namespace.Collection(collectionName)
+
+			var b bytes.Buffer
+
+			b.WriteString(namespace.name)
+			b.WriteByte('\n')
+
+			b.WriteString(collection.name)
+			b.WriteByte('\n')
+
+			writer := bufio.NewWriter(&b)
+			collection.writeRecords(writer, false)
+			writer.Flush()
+
+			client.Outgoing <- packet.New(packetCollectionResponse, b.Bytes())
+
 		case packetSet:
 			set(msg, db)
 
@@ -92,6 +120,8 @@ func clientReadPackets(client *client.Node, db *Node) {
 
 			collection := namespace.Collection(collectionName)
 			collection.readRecords(data)
+
+			collection.loaded <- true
 
 		case packetSet:
 			set(msg, db)

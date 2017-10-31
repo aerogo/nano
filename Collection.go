@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -28,6 +29,7 @@ type Collection struct {
 	name      string
 	dirty     chan bool
 	close     chan bool
+	loaded    chan bool
 	fileMutex sync.Mutex
 	typ       reflect.Type
 }
@@ -35,11 +37,12 @@ type Collection struct {
 // NewCollection ...
 func NewCollection(ns *Namespace, name string) *Collection {
 	collection := &Collection{
-		ns:    ns,
-		node:  ns.node,
-		name:  name,
-		dirty: make(chan bool, runtime.NumCPU()),
-		close: make(chan bool, 1),
+		ns:     ns,
+		node:   ns.node,
+		name:   name,
+		dirty:  make(chan bool, runtime.NumCPU()),
+		close:  make(chan bool, 1),
+		loaded: make(chan bool),
 	}
 
 	t, exists := collection.ns.types[collection.name]
@@ -50,7 +53,11 @@ func NewCollection(ns *Namespace, name string) *Collection {
 
 	collection.typ = t
 
+	// Save in namespace
+	ns.collections.Store(name, collection)
+
 	if ns.node.IsServer() {
+		// Server
 		collection.loadFromDisk()
 
 		go func() {
@@ -69,6 +76,12 @@ func NewCollection(ns *Namespace, name string) *Collection {
 				}
 			}
 		}()
+	} else {
+		// Client
+		data := fmt.Sprintf("%s\n%s\n", collection.ns.name, collection.name)
+		ns.node.Broadcast(packet.New(packetCollectionRequest, []byte(data)))
+
+		<-collection.loaded
 	}
 
 	return collection

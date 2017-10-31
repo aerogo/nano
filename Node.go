@@ -61,6 +61,16 @@ func (node *Node) Broadcast(msg *packet.Packet) {
 	node.node.Broadcast(msg)
 }
 
+// Server ...
+func (node *Node) Server() *server.Node {
+	return node.server
+}
+
+// Client ...
+func (node *Node) Client() *client.Node {
+	return node.client
+}
+
 // Clear deletes all data in the Node.
 func (node *Node) Clear() {
 	node.namespaces.Range(func(key, value interface{}) bool {

@@ -58,7 +58,6 @@ func (ns *Namespace) Collection(name string) *Collection {
 
 	if !found {
 		collection := NewCollection(ns, name)
-		ns.collections.Store(name, collection)
 		return collection
 	}
 
