@@ -14,11 +14,11 @@ type Namespace struct {
 	name        string
 	root        string
 	types       map[string]reflect.Type
-	db          *Node
+	node        *Node
 }
 
 // NewNamespace ...
-func NewNamespace(db *Node, name string, types ...interface{}) *Namespace {
+func NewNamespace(node *Node, name string, types ...interface{}) *Namespace {
 	// Get user info to access the home directory
 	user, err := user.Current()
 
@@ -28,7 +28,7 @@ func NewNamespace(db *Node, name string, types ...interface{}) *Namespace {
 
 	// Create namespace
 	namespace := &Namespace{
-		db:    db,
+		node:  node,
 		name:  name,
 		root:  path.Join(user.HomeDir, ".aero", "db", name),
 		types: make(map[string]reflect.Type),
@@ -116,12 +116,12 @@ func (ns *Namespace) Types() map[string]reflect.Type {
 
 // Node ...
 func (ns *Namespace) Node() *Node {
-	return ns.db
+	return ns.node
 }
 
 // Close ...
 func (ns *Namespace) Close() {
-	if !ns.db.node.IsServer() {
+	if !ns.node.node.IsServer() {
 		return
 	}
 

@@ -24,7 +24,7 @@ const ChannelBufferSize = 128
 type Collection struct {
 	data      sync.Map
 	ns        *Namespace
-	db        *Node
+	node      *Node
 	name      string
 	dirty     chan bool
 	close     chan bool
@@ -36,7 +36,7 @@ type Collection struct {
 func NewCollection(ns *Namespace, name string) *Collection {
 	collection := &Collection{
 		ns:    ns,
-		db:    ns.db,
+		node:  ns.node,
 		name:  name,
 		dirty: make(chan bool, runtime.NumCPU()),
 		close: make(chan bool, 1),
@@ -50,7 +50,7 @@ func NewCollection(ns *Namespace, name string) *Collection {
 
 	collection.typ = t
 
-	if ns.db.node.IsServer() {
+	if ns.node.IsServer() {
 		collection.loadFromDisk()
 
 		go func() {
@@ -62,7 +62,7 @@ func NewCollection(ns *Namespace, name string) *Collection {
 					}
 
 					collection.flush()
-					time.Sleep(ns.db.ioSleepTime)
+					time.Sleep(ns.node.ioSleepTime)
 
 				case <-collection.close:
 					return
@@ -104,7 +104,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 
 	collection.set(key, value)
 
-	if collection.db.broadcastRequired() {
+	if collection.node.broadcastRequired() {
 		var buffer bytes.Buffer
 
 		jsonBytes, err := json.Marshal(value)
@@ -123,7 +123,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 		buffer.WriteByte('\n')
 
 		msg := packet.New(packetSet, buffer.Bytes())
-		collection.db.node.Broadcast(msg)
+		collection.node.Broadcast(msg)
 	}
 }
 
@@ -131,7 +131,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 func (collection *Collection) set(key string, value interface{}) {
 	collection.data.Store(key, value)
 
-	if collection.db.node.IsServer() && len(collection.dirty) == 0 {
+	if collection.node.node.IsServer() && len(collection.dirty) == 0 {
 		collection.dirty <- true
 	}
 }

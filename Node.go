@@ -7,7 +7,11 @@ import (
 	"github.com/aerogo/cluster"
 	"github.com/aerogo/cluster/client"
 	"github.com/aerogo/cluster/server"
+	"github.com/aerogo/packet"
 )
+
+// Force interface implementation
+var _ cluster.Node = (*Node)(nil)
 
 // Node ...
 type Node struct {
@@ -50,6 +54,11 @@ func (node *Node) IsServer() bool {
 // IsClosed ...
 func (node *Node) IsClosed() bool {
 	return node.node.IsClosed()
+}
+
+// Broadcast ...
+func (node *Node) Broadcast(msg *packet.Packet) {
+	node.node.Broadcast(msg)
 }
 
 // Clear deletes all data in the Node.
