@@ -14,7 +14,7 @@ func TestClusterClose(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New()
+		nodes[i] = nano.New(port)
 
 		if i == 0 {
 			assert.True(t, nodes[0].IsServer())
@@ -38,7 +38,7 @@ func TestClusterDataSharing(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New()
+		nodes[i] = nano.New(port)
 		nodes[i].Namespace("test", types...)
 
 		if i == 0 {
@@ -72,7 +72,7 @@ func TestClusterSet(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New()
+		nodes[i] = nano.New(port)
 		nodes[i].Namespace("test", types...)
 
 		if i == 0 {

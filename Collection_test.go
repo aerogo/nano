@@ -8,7 +8,7 @@ import (
 )
 
 func BenchmarkCollectionGet(b *testing.B) {
-	node := nano.New()
+	node := nano.New(port)
 	db := node.Namespace("test", types...)
 	defer node.Close()
 	defer node.Clear()
@@ -27,7 +27,7 @@ func BenchmarkCollectionGet(b *testing.B) {
 }
 
 func BenchmarkCollectionSet(b *testing.B) {
-	node := nano.New()
+	node := nano.New(port)
 	db := node.Namespace("test", types...)
 	defer node.Close()
 	defer node.Clear()
@@ -46,7 +46,7 @@ func BenchmarkCollectionSet(b *testing.B) {
 }
 
 func BenchmarkCollectionDelete(b *testing.B) {
-	node := nano.New()
+	node := nano.New(port)
 	db := node.Namespace("test", types...)
 	defer node.Close()
 	defer node.Clear()
@@ -68,7 +68,7 @@ func BenchmarkCollectionDelete(b *testing.B) {
 }
 
 func BenchmarkCollectionAll(b *testing.B) {
-	node := nano.New()
+	node := nano.New(port)
 	db := node.Namespace("test", types...)
 	defer node.Close()
 	defer node.Clear()

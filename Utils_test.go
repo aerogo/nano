@@ -30,6 +30,8 @@ Etiam condimentum justo mi, eu hendrerit mauris ornare eget. Vestibulum ante ips
 	}
 }
 
+const port = 3000
+
 var types = []interface{}{
 	(*User)(nil),
 }

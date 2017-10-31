@@ -16,16 +16,20 @@ var _ cluster.Node = (*Node)(nil)
 // Node ...
 type Node struct {
 	namespaces  sync.Map
-	ioSleepTime time.Duration
 	node        cluster.Node
 	server      *server.Node
 	client      *client.Node
+	port        int
+	hosts       []string
+	ioSleepTime time.Duration
 }
 
 // New ...
-func New() *Node {
+func New(port int, hosts ...string) *Node {
 	// Create Node
 	node := &Node{
+		port:        port,
+		hosts:       hosts,
 		ioSleepTime: 1 * time.Millisecond,
 	}
 
@@ -93,7 +97,7 @@ func (node *Node) Close() {
 
 // connect ...
 func (node *Node) connect() {
-	node.node = cluster.New(3000)
+	node.node = cluster.New(node.port, node.hosts...)
 
 	if node.node.IsServer() {
 		node.server = node.node.(*server.Node)
