@@ -58,9 +58,7 @@ func serverReadPacketsFromClient(client *server.Client, db *Database) {
 		case packetSet:
 			onSet(msg, db)
 
-			for obj := range db.server.AllClients() {
-				targetClient := obj.(*server.Client)
-
+			for targetClient := range db.server.AllClients() {
 				if targetClient == client {
 					continue
 				}
