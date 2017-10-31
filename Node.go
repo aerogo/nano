@@ -26,7 +26,7 @@ type Node struct {
 func New() *Node {
 	// Create Node
 	node := &Node{
-		ioSleepTime: 500 * time.Millisecond,
+		ioSleepTime: 1 * time.Millisecond,
 	}
 
 	node.connect()

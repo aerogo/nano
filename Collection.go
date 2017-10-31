@@ -41,7 +41,7 @@ func NewCollection(ns *Namespace, name string) *Collection {
 		node:   ns.node,
 		name:   name,
 		dirty:  make(chan bool, runtime.NumCPU()),
-		close:  make(chan bool, 1),
+		close:  make(chan bool),
 		loaded: make(chan bool),
 	}
 
@@ -68,10 +68,23 @@ func NewCollection(ns *Namespace, name string) *Collection {
 						<-collection.dirty
 					}
 
-					collection.flush()
+					err := collection.flush()
+
+					if err != nil {
+						fmt.Println("Error writing collection", collection.name, "to disk", err)
+					}
+
 					time.Sleep(ns.node.ioSleepTime)
 
 				case <-collection.close:
+					if len(collection.dirty) > 0 {
+						collection.flush()
+					}
+
+					collection.close <- true
+
+					close(collection.dirty)
+					close(collection.close)
 					return
 				}
 			}
@@ -197,14 +210,14 @@ func (collection *Collection) All() chan interface{} {
 }
 
 // flush writes all data to the file system.
-func (collection *Collection) flush() {
+func (collection *Collection) flush() error {
 	collection.fileMutex.Lock()
 	defer collection.fileMutex.Unlock()
 
 	file, err := os.OpenFile(path.Join(collection.ns.root, collection.name+".dat"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	file.Seek(0, io.SeekStart)
@@ -213,20 +226,16 @@ func (collection *Collection) flush() {
 	err = bufferedWriter.Flush()
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	err = file.Sync()
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	err = file.Close()
-
-	if err != nil {
-		panic(err)
-	}
+	return file.Close()
 }
 
 // writeRecords ...

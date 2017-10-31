@@ -129,10 +129,7 @@ func (ns *Namespace) Close() {
 
 		// Stop writing
 		collection.close <- true
-
-		// Acquire mutex to make sure all ongoing writes have finished
-		collection.fileMutex.Lock()
-		collection.fileMutex.Unlock()
+		<-collection.close
 
 		return true
 	})
