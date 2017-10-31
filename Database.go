@@ -17,6 +17,7 @@ import (
 type Database struct {
 	collections sync.Map
 	root        string
+	namespace   string
 	ioSleepTime time.Duration
 	types       map[string]reflect.Type
 	node        cluster.Node
@@ -47,6 +48,7 @@ func New(namespace string, types []interface{}) *Database {
 	// Create database
 	db := &Database{
 		root:        root,
+		namespace:   namespace,
 		ioSleepTime: 500 * time.Millisecond,
 		types:       collectionTypes,
 	}
@@ -165,7 +167,7 @@ func (db *Database) connect() {
 
 	if db.node.IsServer() {
 		db.server = db.node.(*server.Node)
-		db.server.OnConnect(onConnect(db))
+		db.server.OnConnect(serverOnConnect(db))
 	} else {
 		db.client = db.node.(*client.Node)
 		go clientReadPackets(db.client, db)

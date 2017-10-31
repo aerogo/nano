@@ -1,9 +1,11 @@
 package nano
 
 const (
-	packetPing       = iota
-	packetPong       = iota
-	packetCollection = iota
-	packetSet        = iota
-	packetDelete     = iota
+	packetPing               = iota
+	packetPong               = iota
+	packetCollectionRequest  = iota
+	packetCollectionResponse = iota
+	packetSet                = iota
+	packetDelete             = iota
+	packetClear              = iota
 )
