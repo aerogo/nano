@@ -8,9 +8,10 @@ import (
 )
 
 func BenchmarkCollectionGet(b *testing.B) {
-	db := nano.New("test", types)
-	defer db.Close()
-	defer db.ClearAll()
+	node := nano.New()
+	db := node.Namespace("test", types...)
+	defer node.Close()
+	defer node.Clear()
 
 	users := db.Collection("User")
 	users.Set("1", newUser(1))
@@ -26,9 +27,10 @@ func BenchmarkCollectionGet(b *testing.B) {
 }
 
 func BenchmarkCollectionSet(b *testing.B) {
-	db := nano.New("test", types)
-	defer db.Close()
-	defer db.ClearAll()
+	node := nano.New()
+	db := node.Namespace("test", types...)
+	defer node.Close()
+	defer node.Clear()
 
 	users := db.Collection("User")
 	example := newUser(1)
@@ -44,9 +46,10 @@ func BenchmarkCollectionSet(b *testing.B) {
 }
 
 func BenchmarkCollectionDelete(b *testing.B) {
-	db := nano.New("test", types)
-	defer db.Close()
-	defer db.ClearAll()
+	node := nano.New()
+	db := node.Namespace("test", types...)
+	defer node.Close()
+	defer node.Clear()
 
 	users := db.Collection("User")
 
@@ -65,9 +68,10 @@ func BenchmarkCollectionDelete(b *testing.B) {
 }
 
 func BenchmarkCollectionAll(b *testing.B) {
-	db := nano.New("test", types)
-	defer db.Close()
-	defer db.ClearAll()
+	node := nano.New()
+	db := node.Namespace("test", types...)
+	defer node.Close()
+	defer node.Clear()
 
 	users := db.Collection("User")
 

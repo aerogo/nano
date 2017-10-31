@@ -23,7 +23,8 @@ const ChannelBufferSize = 128
 // Collection ...
 type Collection struct {
 	data      sync.Map
-	db        *Database
+	ns        *Namespace
+	db        *Node
 	name      string
 	dirty     chan bool
 	close     chan bool
@@ -32,15 +33,16 @@ type Collection struct {
 }
 
 // NewCollection ...
-func NewCollection(db *Database, name string) *Collection {
+func NewCollection(ns *Namespace, name string) *Collection {
 	collection := &Collection{
-		db:    db,
+		ns:    ns,
+		db:    ns.db,
 		name:  name,
 		dirty: make(chan bool, runtime.NumCPU()),
 		close: make(chan bool, 1),
 	}
 
-	t, exists := collection.db.types[collection.name]
+	t, exists := collection.ns.types[collection.name]
 
 	if !exists {
 		panic("Type " + collection.name + " has not been defined")
@@ -48,7 +50,7 @@ func NewCollection(db *Database, name string) *Collection {
 
 	collection.typ = t
 
-	if db.node.IsServer() {
+	if ns.db.node.IsServer() {
 		collection.loadFromDisk()
 
 		go func() {
@@ -60,7 +62,7 @@ func NewCollection(db *Database, name string) *Collection {
 					}
 
 					collection.flush()
-					time.Sleep(db.ioSleepTime)
+					time.Sleep(ns.db.ioSleepTime)
 
 				case <-collection.close:
 					return
@@ -111,6 +113,8 @@ func (collection *Collection) Set(key string, value interface{}) {
 			panic(err)
 		}
 
+		buffer.WriteString(collection.ns.name)
+		buffer.WriteByte('\n')
 		buffer.WriteString(collection.name)
 		buffer.WriteByte('\n')
 		buffer.WriteString(key)
@@ -185,7 +189,7 @@ func (collection *Collection) flush() {
 	collection.fileMutex.Lock()
 	defer collection.fileMutex.Unlock()
 
-	file, err := os.OpenFile(path.Join(collection.db.root, collection.name+".dat"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(path.Join(collection.ns.root, collection.name+".dat"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 
 	if err != nil {
 		panic(err)
@@ -248,7 +252,7 @@ func (collection *Collection) writeRecords(bufferedWriter *bufio.Writer, sorted 
 
 // loadFromDisk ...
 func (collection *Collection) loadFromDisk() {
-	filePath := path.Join(collection.db.root, collection.name+".dat")
+	filePath := path.Join(collection.ns.root, collection.name+".dat")
 	stream, err := os.OpenFile(filePath, os.O_RDONLY|os.O_SYNC, 0644)
 
 	if os.IsNotExist(err) {

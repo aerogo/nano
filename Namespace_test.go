@@ -9,11 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDatabaseGet(t *testing.T) {
-	db := nano.New("test", types)
-	assert.True(t, db.Node().IsServer())
-	defer db.Close()
-	defer db.ClearAll()
+func TestNamespaceGet(t *testing.T) {
+	node := nano.New()
+	db := node.Namespace("test", types...)
+	assert.True(t, node.IsServer())
+	defer node.Close()
+	defer node.Clear()
 
 	db.Set("User", "1", newUser(1))
 	db.Set("User", "2", newUser(2))
@@ -28,11 +29,12 @@ func TestDatabaseGet(t *testing.T) {
 	assert.NotNil(t, val)
 }
 
-func TestDatabaseSet(t *testing.T) {
-	db := nano.New("test", types)
-	assert.True(t, db.Node().IsServer())
-	defer db.Close()
-	defer db.ClearAll()
+func TestNamespaceSet(t *testing.T) {
+	node := nano.New()
+	db := node.Namespace("test", types...)
+	assert.True(t, node.IsServer())
+	defer node.Close()
+	defer node.Clear()
 
 	db.Set("User", "1", newUser(1))
 	db.Delete("User", "2")
@@ -41,11 +43,12 @@ func TestDatabaseSet(t *testing.T) {
 	assert.False(t, db.Exists("User", "2"))
 }
 
-func TestDatabaseClear(t *testing.T) {
-	db := nano.New("test", types)
-	assert.True(t, db.Node().IsServer())
-	defer db.Close()
-	defer db.ClearAll()
+func TestNamespaceClear(t *testing.T) {
+	node := nano.New()
+	db := node.Namespace("test", types...)
+	assert.True(t, node.IsServer())
+	defer node.Close()
+	defer node.Clear()
 
 	db.Set("User", "1", newUser(1))
 	db.Set("User", "2", newUser(2))
@@ -62,11 +65,12 @@ func TestDatabaseClear(t *testing.T) {
 	assert.False(t, db.Exists("User", "3"))
 }
 
-func TestDatabaseAll(t *testing.T) {
-	db := nano.New("test", types)
-	assert.True(t, db.Node().IsServer())
-	defer db.Close()
-	defer db.ClearAll()
+func TestNamespaceAll(t *testing.T) {
+	node := nano.New()
+	db := node.Namespace("test", types...)
+	assert.True(t, node.IsServer())
+	defer node.Close()
+	defer node.Clear()
 
 	db.Collection("User").Clear()
 	recordCount := 10000
@@ -85,21 +89,21 @@ func TestDatabaseAll(t *testing.T) {
 	assert.Equal(t, recordCount, count)
 }
 
-func TestDatabaseClose(t *testing.T) {
-	db := nano.New("test", types)
-	assert.True(t, db.Node().IsServer())
-	assert.False(t, db.Node().IsClosed())
+func TestNamespaceClose(t *testing.T) {
+	node := nano.New()
+	assert.True(t, node.IsServer())
+	assert.False(t, node.IsClosed())
 
-	db.Close()
+	node.Close()
 
 	time.Sleep(100 * time.Millisecond)
-	assert.True(t, db.Node().IsClosed())
+	assert.True(t, node.IsClosed())
 }
 
-// func TestDatabaseColdStart(t *testing.T) {
+// func TestNamespaceColdStart(t *testing.T) {
 // 	time.Sleep(500 * time.Millisecond)
-// 	db := nano.New("test", types)
-// 	assert.True(t, db.Node().IsServer())
+// 	db := nano.New().Namespace("test", types...)
+// 	assert.True(t, node.IsServer())
 
 // 	for i := 0; i < 10000; i++ {
 // 		db.Set("User", strconv.Itoa(i), newUser(i))
@@ -115,8 +119,8 @@ func TestDatabaseClose(t *testing.T) {
 // 	time.Sleep(2000 * time.Millisecond)
 
 // 	// Cold start
-// 	newDB := nano.New("test", types)
-// 	assert.True(t, newdb.Node().IsServer())
+// 	newDB := nano.New().Namespace("test", types...)
+// 	assert.True(t, newnode.IsServer())
 
 // 	defer newDB.Close()
 // 	defer newDB.ClearAll()
