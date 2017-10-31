@@ -319,13 +319,3 @@ func (collection *Collection) readRecords(stream io.Reader) {
 		}
 	}
 }
-
-// allValues iterates over all values in a sync.Map and sends them to the given channel.
-func allValues(data *sync.Map, channel chan interface{}) {
-	data.Range(func(key, value interface{}) bool {
-		channel <- value
-		return true
-	})
-
-	close(channel)
-}
