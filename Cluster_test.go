@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const nodeCount = 5
+const nodeCount = 4
 
 func TestClusterClose(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount, nodeCount)
@@ -86,7 +86,7 @@ func TestClusterSet(t *testing.T) {
 
 	// Set record on node #1
 	nodes[1].Namespace("test").Set("User", "42", newUser(42))
-	time.Sleep(400 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// Confirm that all nodes have the record now
 	for i := 0; i < nodeCount; i++ {

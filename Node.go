@@ -106,7 +106,7 @@ func (node *Node) connect() {
 
 // broadcastRequired ...
 func (node *Node) broadcastRequired() bool {
-	if !node.node.IsServer() {
+	if !node.IsServer() {
 		return true
 	}
 

@@ -16,38 +16,10 @@ import (
 // serverOnConnect ...
 func serverOnConnect(db *Node) func(*server.Client) {
 	return func(client *server.Client) {
-		fmt.Println("New client", client.Connection.RemoteAddr())
+		// fmt.Println("New client", client.Connection.RemoteAddr())
 
 		// Start reading packets from the client
 		go serverReadPacketsFromClient(client, db)
-
-		// // Send initial packet
-		// client.Outgoing <- packet.New(messagePing, []byte("ping"))
-
-		// // Send collection data
-		// wg := sync.WaitGroup{}
-
-		// for typeName := range db.types {
-		// 	wg.Add(1)
-
-		// 	go func(name string) {
-		// 		collection := db.Collection(name)
-
-		// 		var b bytes.Buffer
-		// 		b.WriteString(collection.name)
-		// 		b.WriteByte('\n')
-
-		// 		writer := bufio.NewWriter(&b)
-		// 		collection.writeRecords(writer, false)
-		// 		writer.Flush()
-
-		// 		client.Outgoing <- packet.New(packetCollection, b.Bytes())
-
-		// 		wg.Done()
-		// 	}(typeName)
-		// }
-
-		// wg.Wait()
 	}
 }
 
@@ -100,7 +72,7 @@ func serverReadPacketsFromClient(client *server.Client, db *Node) {
 }
 
 // clientReadPackets ...
-func clientReadPackets(client *client.Node, db *Node) {
+func clientReadPackets(client *client.Node, node *Node) {
 	for msg := range client.Incoming {
 		switch msg.Type {
 		case packetPing:
@@ -113,7 +85,7 @@ func clientReadPackets(client *client.Node, db *Node) {
 			namespaceName, _ := data.ReadString('\n')
 			namespaceName = strings.TrimSuffix(namespaceName, "\n")
 
-			namespace := db.Namespace(namespaceName)
+			namespace := node.Namespace(namespaceName)
 
 			collectionName, _ := data.ReadString('\n')
 			collectionName = strings.TrimSuffix(collectionName, "\n")
@@ -124,7 +96,7 @@ func clientReadPackets(client *client.Node, db *Node) {
 			collection.loaded <- true
 
 		case packetSet:
-			set(msg, db)
+			go set(msg, node)
 		}
 	}
 }
@@ -148,7 +120,11 @@ func set(msg *packet.Packet, db *Node) {
 	jsonBytes = bytes.TrimSuffix(jsonBytes, []byte("\n"))
 
 	value := reflect.New(collection.typ).Interface()
-	json.Unmarshal(jsonBytes, &value)
+	err := json.Unmarshal(jsonBytes, &value)
+
+	if err != nil {
+		panic(err)
+	}
 
 	collection.set(key, value)
 }

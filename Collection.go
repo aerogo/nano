@@ -79,8 +79,7 @@ func NewCollection(ns *Namespace, name string) *Collection {
 	} else {
 		// Client
 		data := fmt.Sprintf("%s\n%s\n", collection.ns.name, collection.name)
-		ns.node.Broadcast(packet.New(packetCollectionRequest, []byte(data)))
-
+		ns.node.Client().Outgoing <- packet.New(packetCollectionRequest, []byte(data))
 		<-collection.loaded
 	}
 
@@ -144,7 +143,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 func (collection *Collection) set(key string, value interface{}) {
 	collection.data.Store(key, value)
 
-	if collection.node.node.IsServer() && len(collection.dirty) == 0 {
+	if collection.node.IsServer() && len(collection.dirty) == 0 {
 		collection.dirty <- true
 	}
 }
