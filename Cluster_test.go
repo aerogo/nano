@@ -15,6 +15,12 @@ func TestClusterClose(t *testing.T) {
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New()
+
+		if i == 0 {
+			assert.True(t, nodes[0].IsServer())
+		} else {
+			assert.False(t, nodes[i].IsServer())
+		}
 	}
 
 	// Wait for clients to connect
@@ -36,8 +42,8 @@ func TestClusterDataSharing(t *testing.T) {
 		nodes[i].Namespace("test", types...)
 
 		if i == 0 {
-			assert.True(t, nodes[i].IsServer())
-			nodes[i].Namespace("test").Set("User", "100", newUser(100))
+			assert.True(t, nodes[0].IsServer())
+			nodes[0].Namespace("test").Set("User", "100", newUser(100))
 		} else {
 			assert.False(t, nodes[i].IsServer())
 		}
@@ -86,13 +92,15 @@ func TestClusterSet(t *testing.T) {
 
 	// Set record on node #1
 	nodes[1].Namespace("test").Set("User", "42", newUser(42))
-	time.Sleep(100 * time.Millisecond)
+
+	// Wait until it propagates through the whole cluster
+	time.Sleep(150 * time.Millisecond)
 
 	// Confirm that all nodes have the record now
 	for i := 0; i < nodeCount; i++ {
 		user, err := nodes[i].Namespace("test").Get("User", "42")
-		assert.NoError(t, err)
-		assert.NotNil(t, user)
+		assert.NoError(t, err, "nodes[%d]", i)
+		assert.NotNil(t, user, "nodes[%d]", i)
 	}
 
 	for i := 0; i < nodeCount; i++ {
