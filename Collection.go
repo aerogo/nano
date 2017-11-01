@@ -107,7 +107,7 @@ func (collection *Collection) Get(key string) (interface{}, error) {
 	val, ok := collection.data.Load(key)
 
 	if !ok {
-		return val, errors.New("Not found")
+		return val, errors.New("Key not found: " + key)
 	}
 
 	return val, nil
@@ -335,9 +335,10 @@ func (collection *Collection) readRecords(stream io.Reader) {
 			key = string(line)
 		} else {
 			value = line
-			v := reflect.New(collection.typ).Interface()
-			json.Unmarshal(value, &v)
-			collection.data.Store(key, v)
+			v := reflect.New(collection.typ)
+			obj := v.Interface()
+			json.Unmarshal(value, &obj)
+			collection.data.Store(key, obj)
 		}
 
 		count++

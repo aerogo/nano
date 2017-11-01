@@ -48,7 +48,12 @@ func NewNamespace(node *Node, name string, types ...interface{}) *Namespace {
 func (ns *Namespace) RegisterTypes(types ...interface{}) {
 	// Convert example objects to their respective types
 	for _, example := range types {
-		typeInfo := reflect.TypeOf(example).Elem()
+		typeInfo := reflect.TypeOf(example)
+
+		if typeInfo.Kind() == reflect.Ptr {
+			typeInfo = typeInfo.Elem()
+		}
+
 		ns.types[typeInfo.Name()] = typeInfo
 	}
 }
