@@ -16,22 +16,26 @@ var _ cluster.Node = (*Node)(nil)
 
 // Node ...
 type Node struct {
-	namespaces  sync.Map
-	node        cluster.Node
-	server      *server.Node
-	client      *client.Node
-	port        int
-	hosts       []string
-	ioSleepTime time.Duration
+	namespaces         sync.Map
+	node               cluster.Node
+	server             *server.Node
+	client             *client.Node
+	port               int
+	hosts              []string
+	ioSleepTime        time.Duration
+	networkSetQueue    chan *packet.Packet
+	networkDeleteQueue chan *packet.Packet
 }
 
 // New ...
 func New(port int, hosts ...string) *Node {
 	// Create Node
 	node := &Node{
-		port:        port,
-		hosts:       hosts,
-		ioSleepTime: 1 * time.Millisecond,
+		port:               port,
+		hosts:              hosts,
+		ioSleepTime:        1 * time.Millisecond,
+		networkSetQueue:    make(chan *packet.Packet, 8192),
+		networkDeleteQueue: make(chan *packet.Packet, 8192),
 	}
 
 	node.connect()
@@ -111,6 +115,7 @@ func (node *Node) connect() {
 	} else {
 		node.client = node.node.(*client.Node)
 		go clientReadPackets(node.client, node)
+		go clientNetworkWorker(node)
 	}
 }
 

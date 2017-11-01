@@ -14,16 +14,6 @@ import (
 	"github.com/aerogo/packet"
 )
 
-// serverOnConnect ...
-func serverOnConnect(db *Node) func(*server.Client) {
-	return func(client *server.Client) {
-		// fmt.Println("New client", client.Connection.RemoteAddr())
-
-		// Start reading packets from the client
-		go serverReadPacketsFromClient(client, db)
-	}
-}
-
 // serverReadPacketsFromClient ...
 func serverReadPacketsFromClient(client *server.Client, db *Node) {
 	for msg := range client.Incoming {
@@ -96,34 +86,35 @@ func clientReadPackets(client *client.Node, node *Node) {
 			collection.loaded <- true
 
 		case packetSet:
-			// TODO: This can be optimized to use worker threads and channels
-			go networkSet(msg, node)
+			node.networkSetQueue <- msg
 
 		case packetDelete:
-			// TODO: This can be optimized to use worker threads and channels
-			go networkDelete(msg, node)
+			node.networkDeleteQueue <- msg
 		}
 	}
+
+	close(node.networkSetQueue)
+	close(node.networkDeleteQueue)
 }
 
-// serverBroadcast ...
-func serverBroadcast(client *server.Client, msg *packet.Packet) {
-	fromRemoteClient := client.Node.IsRemoteAddress(client.Connection.RemoteAddr())
+// clientNetworkWorker ...
+func clientNetworkWorker(node *Node) {
+	for {
+		select {
+		case msg, ok := <-node.networkSetQueue:
+			if !ok {
+				return
+			}
 
-	for targetClient := range client.Node.AllClients() {
-		// Ignore the client who sent us the packet in the first place
-		if targetClient == client {
-			continue
+			networkSet(msg, node)
+
+		case msg, ok := <-node.networkDeleteQueue:
+			if !ok {
+				return
+			}
+
+			networkDelete(msg, node)
 		}
-
-		// Do not send packets from remote clients to other remote clients.
-		// Every node is responsible for notifying other remote nodes about changes.
-		if fromRemoteClient && client.Node.IsRemoteAddress(targetClient.Connection.RemoteAddr()) {
-			continue
-		}
-
-		// Send packet
-		targetClient.Outgoing <- msg
 	}
 }
 
@@ -219,6 +210,38 @@ func networkDelete(msg *packet.Packet, db *Node) error {
 	return nil
 }
 
+// serverOnConnect ...
+func serverOnConnect(db *Node) func(*server.Client) {
+	return func(client *server.Client) {
+		// fmt.Println("New client", client.Connection.RemoteAddr())
+
+		// Start reading packets from the client
+		go serverReadPacketsFromClient(client, db)
+	}
+}
+
+// serverBroadcast ...
+func serverBroadcast(client *server.Client, msg *packet.Packet) {
+	fromRemoteClient := client.Node.IsRemoteAddress(client.Connection.RemoteAddr())
+
+	for targetClient := range client.Node.AllClients() {
+		// Ignore the client who sent us the packet in the first place
+		if targetClient == client {
+			continue
+		}
+
+		// Do not send packets from remote clients to other remote clients.
+		// Every node is responsible for notifying other remote nodes about changes.
+		if fromRemoteClient && client.Node.IsRemoteAddress(targetClient.Connection.RemoteAddr()) {
+			continue
+		}
+
+		// Send packet
+		targetClient.Outgoing <- msg
+	}
+}
+
+// readLine ...
 func readLine(data *bytes.Buffer) string {
 	line, _ := data.ReadString('\n')
 	line = strings.TrimSuffix(line, "\n")
