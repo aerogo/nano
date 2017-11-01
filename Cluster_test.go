@@ -94,7 +94,7 @@ func TestClusterSet(t *testing.T) {
 	nodes[1].Namespace("test").Set("User", "42", newUser(42))
 
 	// Wait until it propagates through the whole cluster
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
 
 	// Confirm that all nodes have the record now
 	for i := 0; i < nodeCount; i++ {
