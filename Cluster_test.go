@@ -11,7 +11,7 @@ import (
 const nodeCount = 4
 
 func TestClusterClose(t *testing.T) {
-	nodes := make([]*nano.Node, nodeCount, nodeCount)
+	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New(port)
@@ -35,11 +35,11 @@ func TestClusterClose(t *testing.T) {
 
 func TestClusterDataSharing(t *testing.T) {
 	// Create cluster where the server has initial data
-	nodes := make([]*nano.Node, nodeCount, nodeCount)
+	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New(port)
-		nodes[i].Namespace("test", types...)
+		nodes[i].Namespace("test").RegisterTypes(types...)
 
 		if i == 0 {
 			assert.True(t, nodes[0].IsServer())
@@ -69,11 +69,11 @@ func TestClusterDataSharing(t *testing.T) {
 
 func TestClusterSet(t *testing.T) {
 	// Create cluster
-	nodes := make([]*nano.Node, nodeCount, nodeCount)
+	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New(port)
-		nodes[i].Namespace("test", types...)
+		nodes[i].Namespace("test").RegisterTypes(types...)
 
 		if i == 0 {
 			assert.True(t, nodes[i].IsServer())
@@ -111,11 +111,11 @@ func TestClusterSet(t *testing.T) {
 
 func TestClusterDelete(t *testing.T) {
 	// Create cluster
-	nodes := make([]*nano.Node, nodeCount, nodeCount)
+	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New(port)
-		nodes[i].Namespace("test", types...)
+		nodes[i].Namespace("test").RegisterTypes(types...)
 
 		if i == 0 {
 			assert.True(t, nodes[i].IsServer())

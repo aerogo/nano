@@ -35,8 +35,8 @@ type Collection struct {
 	typ              reflect.Type
 }
 
-// NewCollection ...
-func NewCollection(ns *Namespace, name string) *Collection {
+// newCollection ...
+func newCollection(ns *Namespace, name string) *Collection {
 	collection := &Collection{
 		ns:     ns,
 		node:   ns.node,

@@ -11,7 +11,7 @@ import (
 
 func BenchmarkCollectionGet(b *testing.B) {
 	node := nano.New(port)
-	db := node.Namespace("test", types...)
+	db := node.Namespace("test").RegisterTypes(types...)
 	defer node.Close()
 	defer node.Clear()
 
@@ -30,7 +30,7 @@ func BenchmarkCollectionGet(b *testing.B) {
 
 func BenchmarkCollectionSet(b *testing.B) {
 	node := nano.New(port)
-	db := node.Namespace("test", types...)
+	db := node.Namespace("test").RegisterTypes(types...)
 	defer node.Close()
 	defer node.Clear()
 
@@ -49,7 +49,7 @@ func BenchmarkCollectionSet(b *testing.B) {
 
 func BenchmarkCollectionDelete(b *testing.B) {
 	node := nano.New(port)
-	db := node.Namespace("test", types...)
+	db := node.Namespace("test").RegisterTypes(types...)
 	defer node.Close()
 	defer node.Clear()
 
@@ -71,7 +71,7 @@ func BenchmarkCollectionDelete(b *testing.B) {
 
 func BenchmarkCollectionAll(b *testing.B) {
 	node := nano.New(port)
-	db := node.Namespace("test", types...)
+	db := node.Namespace("test").RegisterTypes(types...)
 	defer node.Close()
 	defer node.Clear()
 
@@ -95,11 +95,11 @@ func BenchmarkCollectionAll(b *testing.B) {
 
 func BenchmarkClusterGet(b *testing.B) {
 	// Create cluster
-	nodes := make([]*nano.Node, nodeCount, nodeCount)
+	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New(port)
-		nodes[i].Namespace("test", types...)
+		nodes[i].Namespace("test").RegisterTypes(types...)
 	}
 
 	// Wait for clients to connect
@@ -130,11 +130,11 @@ func BenchmarkClusterGet(b *testing.B) {
 
 func BenchmarkClusterSet(b *testing.B) {
 	// Create cluster
-	nodes := make([]*nano.Node, nodeCount, nodeCount)
+	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New(port)
-		nodes[i].Namespace("test", types...)
+		nodes[i].Namespace("test").RegisterTypes(types...)
 	}
 
 	// Wait for clients to connect
@@ -165,11 +165,11 @@ func BenchmarkClusterSet(b *testing.B) {
 
 func BenchmarkClusterDelete(b *testing.B) {
 	// Create cluster
-	nodes := make([]*nano.Node, nodeCount, nodeCount)
+	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i] = nano.New(port)
-		nodes[i].Namespace("test", types...)
+		nodes[i].Namespace("test").RegisterTypes(types...)
 	}
 
 	// Wait for clients to connect

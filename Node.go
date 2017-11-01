@@ -2,6 +2,7 @@ package nano
 
 import (
 	"net"
+	"runtime"
 	"sync"
 	"time"
 
@@ -43,13 +44,19 @@ func New(port int, hosts ...string) *Node {
 }
 
 // Namespace ...
-func (node *Node) Namespace(name string, types ...interface{}) *Namespace {
-	obj, found := node.namespaces.Load(name)
+func (node *Node) Namespace(name string) *Namespace {
+	obj, loaded := node.namespaces.LoadOrStore(name, nil)
 
-	if !found {
-		namespace := NewNamespace(node, name, types...)
+	if !loaded {
+		namespace := newNamespace(node, name)
 		node.namespaces.Store(name, namespace)
 		return namespace
+	}
+
+	// Wait for existing namespace load
+	for obj == nil {
+		time.Sleep(10 * time.Millisecond)
+		obj, _ = node.namespaces.Load(name)
 	}
 
 	return obj.(*Namespace)
@@ -115,7 +122,10 @@ func (node *Node) connect() {
 	} else {
 		node.client = node.node.(*client.Node)
 		go clientReadPackets(node.client, node)
-		go clientNetworkWorker(node)
+
+		for i := 0; i < runtime.NumCPU(); i++ {
+			go clientNetworkWorker(node)
+		}
 	}
 }
 

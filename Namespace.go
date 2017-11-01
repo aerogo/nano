@@ -18,8 +18,8 @@ type Namespace struct {
 	node        *Node
 }
 
-// NewNamespace ...
-func NewNamespace(node *Node, name string, types ...interface{}) *Namespace {
+// newNamespace ...
+func newNamespace(node *Node, name string) *Namespace {
 	// Get user info to access the home directory
 	user, err := user.Current()
 
@@ -35,9 +35,6 @@ func NewNamespace(node *Node, name string, types ...interface{}) *Namespace {
 		types: make(map[string]reflect.Type),
 	}
 
-	// Register data types
-	namespace.RegisterTypes(types...)
-
 	// Create directory
 	os.MkdirAll(namespace.root, 0777)
 
@@ -45,7 +42,7 @@ func NewNamespace(node *Node, name string, types ...interface{}) *Namespace {
 }
 
 // RegisterTypes ...
-func (ns *Namespace) RegisterTypes(types ...interface{}) {
+func (ns *Namespace) RegisterTypes(types ...interface{}) *Namespace {
 	// Convert example objects to their respective types
 	for _, example := range types {
 		typeInfo := reflect.TypeOf(example)
@@ -56,6 +53,8 @@ func (ns *Namespace) RegisterTypes(types ...interface{}) {
 
 		ns.types[typeInfo.Name()] = typeInfo
 	}
+
+	return ns
 }
 
 // Collection ...
@@ -63,7 +62,7 @@ func (ns *Namespace) Collection(name string) *Collection {
 	obj, loaded := ns.collections.LoadOrStore(name, nil)
 
 	if !loaded {
-		collection := NewCollection(ns, name)
+		collection := newCollection(ns, name)
 		return collection
 	}
 
