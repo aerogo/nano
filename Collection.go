@@ -23,15 +23,16 @@ const ChannelBufferSize = 128
 
 // Collection ...
 type Collection struct {
-	data      sync.Map
-	ns        *Namespace
-	node      *Node
-	name      string
-	dirty     chan bool
-	close     chan bool
-	loaded    chan bool
-	fileMutex sync.Mutex
-	typ       reflect.Type
+	data             sync.Map
+	lastModification sync.Map
+	ns               *Namespace
+	node             *Node
+	name             string
+	dirty            chan bool
+	close            chan bool
+	loaded           chan bool
+	fileMutex        sync.Mutex
+	typ              reflect.Type
 }
 
 // NewCollection ...
@@ -59,6 +60,9 @@ func NewCollection(ns *Namespace, name string) *Collection {
 	if ns.node.IsServer() {
 		// Server
 		collection.loadFromDisk()
+
+		// Indicate that collection is loaded
+		close(collection.loaded)
 
 		go func() {
 			for {
@@ -93,6 +97,7 @@ func NewCollection(ns *Namespace, name string) *Collection {
 		// Client
 		data := fmt.Sprintf("%s\n%s\n", collection.ns.name, collection.name)
 		ns.node.Client().Outgoing <- packet.New(packetCollectionRequest, []byte(data))
+
 		<-collection.loaded
 	}
 
@@ -121,16 +126,24 @@ func (collection *Collection) GetMany(keys []string) []interface{} {
 	return values
 }
 
+// set ...
+func (collection *Collection) set(key string, value interface{}) {
+	collection.data.Store(key, value)
+
+	if collection.node.IsServer() && len(collection.dirty) == 0 {
+		collection.dirty <- true
+	}
+}
+
 // Set ...
 func (collection *Collection) Set(key string, value interface{}) {
 	if value == nil {
 		return
 	}
 
-	collection.set(key, value)
-
 	if collection.node.broadcastRequired() {
-		var buffer bytes.Buffer
+		// It's important to store the timestamp BEFORE the actual collection.set
+		collection.lastModification.Store(key, time.Now().UnixNano())
 
 		jsonBytes, err := json.Marshal(value)
 
@@ -138,6 +151,8 @@ func (collection *Collection) Set(key string, value interface{}) {
 			panic(err)
 		}
 
+		buffer := bytes.Buffer{}
+		buffer.Write(packet.Int64ToBytes(time.Now().UnixNano()))
 		buffer.WriteString(collection.ns.name)
 		buffer.WriteByte('\n')
 		buffer.WriteString(collection.name)
@@ -150,11 +165,13 @@ func (collection *Collection) Set(key string, value interface{}) {
 		msg := packet.New(packetSet, buffer.Bytes())
 		collection.node.Broadcast(msg)
 	}
+
+	collection.set(key, value)
 }
 
-// set ...
-func (collection *Collection) set(key string, value interface{}) {
-	collection.data.Store(key, value)
+// delete ...
+func (collection *Collection) delete(key string) {
+	collection.data.Delete(key)
 
 	if collection.node.IsServer() && len(collection.dirty) == 0 {
 		collection.dirty <- true
@@ -163,12 +180,25 @@ func (collection *Collection) set(key string, value interface{}) {
 
 // Delete ...
 func (collection *Collection) Delete(key string) bool {
-	_, exists := collection.data.Load(key)
-	collection.data.Delete(key)
+	if collection.node.broadcastRequired() {
+		// It's important to store the timestamp BEFORE the actual collection.delete
+		collection.lastModification.Store(key, time.Now().UnixNano())
 
-	if len(collection.dirty) == 0 {
-		collection.dirty <- true
+		buffer := bytes.Buffer{}
+		buffer.Write(packet.Int64ToBytes(time.Now().UnixNano()))
+		buffer.WriteString(collection.ns.name)
+		buffer.WriteByte('\n')
+		buffer.WriteString(collection.name)
+		buffer.WriteByte('\n')
+		buffer.WriteString(key)
+		buffer.WriteByte('\n')
+
+		msg := packet.New(packetDelete, buffer.Bytes())
+		collection.node.Broadcast(msg)
 	}
+
+	_, exists := collection.data.Load(key)
+	collection.delete(key)
 
 	return exists
 }

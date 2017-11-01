@@ -1,6 +1,7 @@
 package nano
 
 import (
+	"net"
 	"sync"
 	"time"
 
@@ -73,6 +74,11 @@ func (node *Node) Server() *server.Node {
 // Client ...
 func (node *Node) Client() *client.Node {
 	return node.client
+}
+
+// Address ...
+func (node *Node) Address() net.Addr {
+	return node.node.Address()
 }
 
 // Clear deletes all data in the Node.

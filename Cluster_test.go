@@ -94,6 +94,45 @@ func TestClusterSet(t *testing.T) {
 	nodes[1].Namespace("test").Set("User", "42", newUser(42))
 
 	// Wait until it propagates through the whole cluster
+	time.Sleep(250 * time.Millisecond)
+
+	// Confirm that all nodes have the record now
+	for i := 0; i < nodeCount; i++ {
+		user, err := nodes[i].Namespace("test").Get("User", "42")
+		assert.NoError(t, err, "nodes[%d]", i)
+		assert.NotNil(t, user, "nodes[%d]", i)
+	}
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i].Clear()
+		nodes[i].Close()
+	}
+}
+
+func TestClusterDelete(t *testing.T) {
+	// Create cluster
+	nodes := make([]*nano.Node, nodeCount, nodeCount)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i] = nano.New(port)
+		nodes[i].Namespace("test", types...)
+
+		if i == 0 {
+			assert.True(t, nodes[i].IsServer())
+		} else {
+			assert.False(t, nodes[i].IsServer())
+		}
+	}
+
+	// Wait for clients to connect
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	// Set record on node #1
+	nodes[1].Namespace("test").Set("User", "42", newUser(42))
+
+	// Wait until it propagates through the whole cluster
 	time.Sleep(150 * time.Millisecond)
 
 	// Confirm that all nodes have the record now
@@ -101,6 +140,18 @@ func TestClusterSet(t *testing.T) {
 		user, err := nodes[i].Namespace("test").Get("User", "42")
 		assert.NoError(t, err, "nodes[%d]", i)
 		assert.NotNil(t, user, "nodes[%d]", i)
+	}
+
+	// Delete on all nodes
+	nodes[0].Namespace("test").Delete("User", "42")
+
+	// Wait until it propagates through the whole cluster
+	time.Sleep(150 * time.Millisecond)
+
+	// Confirm that all nodes deleted the record now
+	for i := 0; i < nodeCount; i++ {
+		exists := nodes[i].Namespace("test").Exists("User", "42")
+		assert.False(t, exists, "nodes[%d]", i)
 	}
 
 	for i := 0; i < nodeCount; i++ {
