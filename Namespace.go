@@ -6,6 +6,7 @@ import (
 	"path"
 	"reflect"
 	"sync"
+	"time"
 )
 
 // Namespace ...
@@ -54,11 +55,17 @@ func (ns *Namespace) RegisterTypes(types ...interface{}) {
 
 // Collection ...
 func (ns *Namespace) Collection(name string) *Collection {
-	obj, found := ns.collections.Load(name)
+	obj, loaded := ns.collections.LoadOrStore(name, nil)
 
-	if !found {
+	if !loaded {
 		collection := NewCollection(ns, name)
 		return collection
+	}
+
+	// Wait for existing collection load
+	for obj == nil {
+		time.Sleep(10 * time.Millisecond)
+		obj, _ = ns.collections.Load(name)
 	}
 
 	return obj.(*Collection)

@@ -2,7 +2,9 @@ package nano_test
 
 import (
 	"strconv"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/aerogo/nano"
 )
@@ -89,4 +91,37 @@ func BenchmarkCollectionAll(b *testing.B) {
 	}
 
 	b.StopTimer()
+}
+
+func BenchmarkClusterSet(b *testing.B) {
+	// Create cluster
+	nodes := make([]*nano.Node, nodeCount, nodeCount)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i] = nano.New(port)
+		nodes[i].Namespace("test", types...)
+	}
+
+	// Wait for clients to connect
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	i := int64(0)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			atomic.AddInt64(&i, 1)
+			id := int(atomic.LoadInt64(&i))
+			nodes[id%nodeCount].Namespace("test").Set("User", strconv.Itoa(id), newUser(id))
+		}
+	})
+	b.StopTimer()
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i].Clear()
+		nodes[i].Close()
+	}
 }

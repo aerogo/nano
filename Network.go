@@ -61,15 +61,11 @@ func serverReadPacketsFromClient(client *server.Client, db *Node) {
 		case packetSet:
 			if networkSet(msg, db) == nil {
 				serverBroadcast(client, msg)
-			} else {
-				fmt.Println("skip set broadcast")
 			}
 
 		case packetDelete:
 			if networkDelete(msg, db) == nil {
 				serverBroadcast(client, msg)
-			} else {
-				fmt.Println("skip delete broadcast")
 			}
 		}
 	}
@@ -97,7 +93,7 @@ func clientReadPackets(client *client.Node, node *Node) {
 			collection := namespace.Collection(collectionName)
 			collection.readRecords(data)
 
-			close(collection.loaded)
+			collection.loaded <- true
 
 		case packetSet:
 			// TODO: This can be optimized to use worker threads and channels

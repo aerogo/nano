@@ -85,9 +85,6 @@ func NewCollection(ns *Namespace, name string) *Collection {
 						collection.flush()
 					}
 
-					collection.close <- true
-
-					close(collection.dirty)
 					close(collection.close)
 					return
 				}
@@ -99,6 +96,7 @@ func NewCollection(ns *Namespace, name string) *Collection {
 		ns.node.Client().Outgoing <- packet.New(packetCollectionRequest, []byte(data))
 
 		<-collection.loaded
+		close(collection.loaded)
 	}
 
 	return collection
