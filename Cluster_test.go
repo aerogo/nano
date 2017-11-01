@@ -143,7 +143,7 @@ func TestClusterDelete(t *testing.T) {
 	}
 
 	// Delete on all nodes
-	nodes[0].Namespace("test").Delete("User", "42")
+	nodes[2].Namespace("test").Delete("User", "42")
 
 	// Wait until it propagates through the whole cluster
 	time.Sleep(150 * time.Millisecond)
