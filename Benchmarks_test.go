@@ -77,7 +77,7 @@ func BenchmarkCollectionAll(b *testing.B) {
 
 	users := db.Collection("User")
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 1; i++ {
 		users.Set(strconv.Itoa(i), newUser(i))
 	}
 
@@ -91,6 +91,41 @@ func BenchmarkCollectionAll(b *testing.B) {
 	}
 
 	b.StopTimer()
+}
+
+func BenchmarkClusterGet(b *testing.B) {
+	// Create cluster
+	nodes := make([]*nano.Node, nodeCount, nodeCount)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i] = nano.New(port)
+		nodes[i].Namespace("test", types...)
+	}
+
+	// Wait for clients to connect
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	i := int64(0)
+
+	// Run benchmark
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			atomic.AddInt64(&i, 1)
+			id := int(atomic.LoadInt64(&i))
+			nodes[id%nodeCount].Namespace("test").Get("User", strconv.Itoa(id))
+		}
+	})
+	b.StopTimer()
+
+	// Cleanup
+	for i := 0; i < nodeCount; i++ {
+		nodes[i].Clear()
+		nodes[i].Close()
+	}
 }
 
 func BenchmarkClusterSet(b *testing.B) {
@@ -109,6 +144,7 @@ func BenchmarkClusterSet(b *testing.B) {
 
 	i := int64(0)
 
+	// Run benchmark
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -120,6 +156,42 @@ func BenchmarkClusterSet(b *testing.B) {
 	})
 	b.StopTimer()
 
+	// Cleanup
+	for i := 0; i < nodeCount; i++ {
+		nodes[i].Clear()
+		nodes[i].Close()
+	}
+}
+
+func BenchmarkClusterDelete(b *testing.B) {
+	// Create cluster
+	nodes := make([]*nano.Node, nodeCount, nodeCount)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i] = nano.New(port)
+		nodes[i].Namespace("test", types...)
+	}
+
+	// Wait for clients to connect
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	i := int64(0)
+
+	// Run benchmark
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			atomic.AddInt64(&i, 1)
+			id := int(atomic.LoadInt64(&i))
+			nodes[id%nodeCount].Namespace("test").Delete("User", strconv.Itoa(id))
+		}
+	})
+	b.StopTimer()
+
+	// Cleanup
 	for i := 0; i < nodeCount; i++ {
 		nodes[i].Clear()
 		nodes[i].Close()

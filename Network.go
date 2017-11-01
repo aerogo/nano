@@ -17,7 +17,7 @@ import (
 // serverOnConnect ...
 func serverOnConnect(db *Node) func(*server.Client) {
 	return func(client *server.Client) {
-		fmt.Println("New client", client.Connection.RemoteAddr())
+		// fmt.Println("New client", client.Connection.RemoteAddr())
 
 		// Start reading packets from the client
 		go serverReadPacketsFromClient(client, db)
