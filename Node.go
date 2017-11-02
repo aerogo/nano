@@ -55,7 +55,7 @@ func (node *Node) Namespace(name string) *Namespace {
 
 	// Wait for existing namespace load
 	for obj == nil {
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 		obj, _ = node.namespaces.Load(name)
 	}
 

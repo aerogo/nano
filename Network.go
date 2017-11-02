@@ -80,10 +80,11 @@ func clientReadPackets(client *client.Node, node *Node) {
 			collectionName, _ := data.ReadString('\n')
 			collectionName = strings.TrimSuffix(collectionName, "\n")
 
-			collection := namespace.Collection(collectionName)
+			collection := namespace.collectionLoading(collectionName)
 			collection.readRecords(data)
 
-			collection.loaded <- true
+			namespace.collectionsLoading.Delete(collectionName)
+			close(collection.loaded)
 
 		case packetSet:
 			node.networkSetQueue <- msg

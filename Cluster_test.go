@@ -4,11 +4,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aerogo/flow"
+
 	"github.com/aerogo/nano"
 	"github.com/stretchr/testify/assert"
 )
 
 const nodeCount = 4
+const parallelRequestCount = 8
 
 func TestClusterClose(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount)
@@ -56,9 +59,11 @@ func TestClusterDataSharing(t *testing.T) {
 
 	// Check data on client nodes
 	for i := 1; i < nodeCount; i++ {
-		user, err := nodes[i].Namespace("test").Get("User", "100")
-		assert.NoError(t, err)
-		assert.NotNil(t, user)
+		flow.ParallelRepeat(parallelRequestCount, func() {
+			user, err := nodes[i].Namespace("test").Get("User", "100")
+			assert.NoError(t, err)
+			assert.NotNil(t, user)
+		})
 	}
 
 	for i := 0; i < nodeCount; i++ {
@@ -88,10 +93,14 @@ func TestClusterSet(t *testing.T) {
 	}
 
 	// Make sure that node #0 does not have the record
-	nodes[0].Namespace("test").Delete("User", "42")
+	flow.ParallelRepeat(parallelRequestCount, func() {
+		nodes[0].Namespace("test").Delete("User", "42")
+	})
 
 	// Set record on node #1
-	nodes[1].Namespace("test").Set("User", "42", newUser(42))
+	flow.ParallelRepeat(parallelRequestCount, func() {
+		nodes[1].Namespace("test").Set("User", "42", newUser(42))
+	})
 
 	// Wait until it propagates through the whole cluster
 	time.Sleep(150 * time.Millisecond)
@@ -143,7 +152,9 @@ func TestClusterDelete(t *testing.T) {
 	}
 
 	// Delete on all nodes
-	nodes[2].Namespace("test").Delete("User", "42")
+	flow.ParallelRepeat(parallelRequestCount, func() {
+		nodes[2].Namespace("test").Delete("User", "42")
+	})
 
 	// Wait until it propagates through the whole cluster
 	time.Sleep(150 * time.Millisecond)

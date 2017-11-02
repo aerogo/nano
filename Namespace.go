@@ -11,11 +11,12 @@ import (
 
 // Namespace ...
 type Namespace struct {
-	collections sync.Map
-	name        string
-	root        string
-	types       map[string]reflect.Type
-	node        *Node
+	collections        sync.Map
+	collectionsLoading sync.Map
+	name               string
+	root               string
+	types              map[string]reflect.Type
+	node               *Node
 }
 
 // newNamespace ...
@@ -63,15 +64,22 @@ func (ns *Namespace) Collection(name string) *Collection {
 
 	if !loaded {
 		collection := newCollection(ns, name)
+		ns.collections.Store(name, collection)
 		return collection
 	}
 
 	// Wait for existing collection load
 	for obj == nil {
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 		obj, _ = ns.collections.Load(name)
 	}
 
+	return obj.(*Collection)
+}
+
+// collectionLoading returns the collection that is currently being loaded.
+func (ns *Namespace) collectionLoading(name string) *Collection {
+	obj, _ := ns.collectionsLoading.Load(name)
 	return obj.(*Collection)
 }
 
@@ -113,8 +121,13 @@ func (ns *Namespace) Clear(collection string) {
 // ClearAll ...
 func (ns *Namespace) ClearAll() {
 	ns.collections.Range(func(key, value interface{}) bool {
+		if value == nil {
+			return true
+		}
+
 		collection := value.(*Collection)
 		collection.Clear()
+
 		return true
 	})
 }

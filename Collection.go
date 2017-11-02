@@ -53,11 +53,14 @@ func newCollection(ns *Namespace, name string) *Collection {
 	}
 
 	collection.typ = t
+	collection.load()
 
-	// Save in namespace
-	ns.collections.Store(name, collection)
+	return collection
+}
 
-	if ns.node.IsServer() {
+// load loads all collection data
+func (collection *Collection) load() {
+	if collection.node.IsServer() {
 		// Server
 		collection.loadFromDisk()
 
@@ -78,7 +81,7 @@ func newCollection(ns *Namespace, name string) *Collection {
 						fmt.Println("Error writing collection", collection.name, "to disk", err)
 					}
 
-					time.Sleep(ns.node.ioSleepTime)
+					time.Sleep(collection.node.ioSleepTime)
 
 				case <-collection.close:
 					if len(collection.dirty) > 0 {
@@ -92,14 +95,11 @@ func newCollection(ns *Namespace, name string) *Collection {
 		}()
 	} else {
 		// Client
+		collection.ns.collectionsLoading.Store(collection.name, collection)
 		data := fmt.Sprintf("%s\n%s\n", collection.ns.name, collection.name)
-		ns.node.Client().Outgoing <- packet.New(packetCollectionRequest, []byte(data))
-
+		collection.node.Client().Outgoing <- packet.New(packetCollectionRequest, []byte(data))
 		<-collection.loaded
-		close(collection.loaded)
 	}
-
-	return collection
 }
 
 // Get ...
