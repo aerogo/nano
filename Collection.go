@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/aerogo/packet"
+	"github.com/mohae/deepcopy"
 )
 
 // ChannelBufferSize is the size of the channels used to iterate over a whole collection.
@@ -111,6 +112,17 @@ func (collection *Collection) Get(key string) (interface{}, error) {
 	}
 
 	return val, nil
+}
+
+// GetCopy ...
+func (collection *Collection) GetCopy(key string) (interface{}, error) {
+	val, ok := collection.data.Load(key)
+
+	if !ok {
+		return val, errors.New("Key not found: " + key)
+	}
+
+	return deepcopy.Copy(val), nil
 }
 
 // GetMany ...
