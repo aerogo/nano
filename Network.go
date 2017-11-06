@@ -123,7 +123,16 @@ func clientReadPackets(client *client.Node, node *Node) {
 			}
 
 			client.Close()
+
+			if node.verbose {
+				fmt.Println("[client] Reconnecting", client.Address())
+			}
+
 			client.Connect()
+
+			if node.verbose {
+				fmt.Println("[client] Reconnect finished!", client.Address())
+			}
 
 		default:
 			fmt.Printf("Error: Unknown network packet type %d of length %d\n", msg.Type, msg.Length)

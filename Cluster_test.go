@@ -72,11 +72,10 @@ func TestClusterReconnect(t *testing.T) {
 
 	// Wait for clients to reconnect in the span of a few seconds
 	start := time.Now()
-
 	for nodes[0].Server().ClientCount() < nodeCount-1 {
 		time.Sleep(10 * time.Millisecond)
 
-		if time.Since(start) > time.Duration(2*time.Second) {
+		if time.Since(start) > 2*time.Second {
 			assert.Fail(t, "Not enough clients reconnected")
 			return
 		}
