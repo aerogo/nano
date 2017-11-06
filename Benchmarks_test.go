@@ -122,7 +122,7 @@ func BenchmarkClusterGet(b *testing.B) {
 	b.StopTimer()
 
 	// Cleanup
-	for i := 0; i < nodeCount; i++ {
+	for i := nodeCount - 1; i >= 0; i-- {
 		nodes[i].Clear()
 		nodes[i].Close()
 	}
@@ -157,7 +157,7 @@ func BenchmarkClusterSet(b *testing.B) {
 	b.StopTimer()
 
 	// Cleanup
-	for i := 0; i < nodeCount; i++ {
+	for i := nodeCount - 1; i >= 0; i-- {
 		nodes[i].Clear()
 		nodes[i].Close()
 	}
@@ -192,7 +192,7 @@ func BenchmarkClusterDelete(b *testing.B) {
 	b.StopTimer()
 
 	// Cleanup
-	for i := 0; i < nodeCount; i++ {
+	for i := nodeCount - 1; i >= 0; i-- {
 		nodes[i].Clear()
 		nodes[i].Close()
 	}

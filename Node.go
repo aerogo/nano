@@ -27,6 +27,7 @@ type Node struct {
 	ioSleepTime        time.Duration
 	networkSetQueue    chan *packet.Packet
 	networkDeleteQueue chan *packet.Packet
+	verbose            bool
 }
 
 // New ...
@@ -105,7 +106,10 @@ func (node *Node) Clear() {
 // Close ...
 func (node *Node) Close() {
 	if node.IsServer() {
-		fmt.Println("[server] broadcast close")
+		if node.verbose {
+			fmt.Println("[server] broadcast close")
+		}
+
 		node.Broadcast(packet.New(packetClose, nil))
 	}
 

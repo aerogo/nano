@@ -1,7 +1,6 @@
 package nano_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -32,8 +31,11 @@ func TestClusterClose(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	for i := 0; i < nodeCount; i++ {
+	// Close clients
+	for i := nodeCount - 1; i >= 0; i-- {
+		assert.False(t, nodes[i].IsClosed())
 		nodes[i].Close()
+		assert.True(t, nodes[i].IsClosed())
 	}
 }
 
@@ -58,20 +60,17 @@ func TestClusterReconnect(t *testing.T) {
 	}
 
 	// Close server only
-	fmt.Println("testing server close")
 	nodes[0].Close()
 
 	// Wait a bit, to be safe
 	time.Sleep(50 * time.Millisecond)
 
 	// Restart server
-	fmt.Println("testing server restart")
 	nodes[0] = nano.New(port)
 	nodes[0].Namespace("test").RegisterTypes(types...)
 	assert.True(t, nodes[0].IsServer())
 
 	// Wait for clients to reconnect in the span of a few seconds
-	fmt.Println("testing client reconnect")
 	start := time.Now()
 
 	for nodes[0].Server().ClientCount() < nodeCount-1 {
@@ -83,17 +82,14 @@ func TestClusterReconnect(t *testing.T) {
 		}
 	}
 
-	fmt.Println("testing namespace Get")
 	obj, err := nodes[1].Namespace("test").Get("User", "1")
 	assert.NoError(t, err)
 	assert.NotNil(t, obj)
 	assert.Equal(t, "1", obj.(*User).ID)
 
-	fmt.Println("End of test, closing")
-
-	// for i := 0; i < nodeCount; i++ {
-	// 	nodes[i].Close()
-	// }
+	for i := nodeCount - 1; i >= 0; i-- {
+		nodes[i].Close()
+	}
 }
 
 func TestClusterDataSharing(t *testing.T) {
@@ -126,7 +122,7 @@ func TestClusterDataSharing(t *testing.T) {
 		})
 	}
 
-	for i := 0; i < nodeCount; i++ {
+	for i := nodeCount - 1; i >= 0; i-- {
 		nodes[i].Clear()
 		nodes[i].Close()
 	}
@@ -172,7 +168,7 @@ func TestClusterSet(t *testing.T) {
 		assert.NotNil(t, user, "nodes[%d]", i)
 	}
 
-	for i := 0; i < nodeCount; i++ {
+	for i := nodeCount - 1; i >= 0; i-- {
 		nodes[i].Clear()
 		nodes[i].Close()
 	}
@@ -225,7 +221,7 @@ func TestClusterDelete(t *testing.T) {
 		assert.False(t, exists, "nodes[%d]", i)
 	}
 
-	for i := 0; i < nodeCount; i++ {
+	for i := nodeCount - 1; i >= 0; i-- {
 		nodes[i].Clear()
 		nodes[i].Close()
 	}

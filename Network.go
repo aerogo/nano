@@ -26,7 +26,6 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 		// 	fmt.Println("client", string(msg.Data))
 
 		case packetCollectionRequest:
-			fmt.Println("COLLECTION REQUEST", client.Connection().RemoteAddr())
 			data := bytes.NewBuffer(msg.Data)
 
 			namespaceName, _ := data.ReadString('\n')
@@ -36,6 +35,10 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 
 			collectionName, _ := data.ReadString('\n')
 			collectionName = strings.TrimSuffix(collectionName, "\n")
+
+			if node.verbose {
+				fmt.Println("COLLECTION REQUEST", client.Connection().RemoteAddr(), namespaceName+"."+collectionName)
+			}
 
 			collection := namespace.Collection(collectionName)
 
@@ -52,7 +55,10 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 			writer.Flush()
 
 			client.Outgoing <- packet.New(packetCollectionResponse, b.Bytes())
-			fmt.Println("COLLECTION REQUEST ANSWERED", client.Connection().RemoteAddr())
+
+			if node.verbose {
+				fmt.Println("COLLECTION REQUEST ANSWERED", client.Connection().RemoteAddr())
+			}
 
 		case packetSet:
 			if networkSet(msg, node) == nil {
@@ -85,7 +91,6 @@ func clientReadPackets(client *client.Node, node *Node) {
 		// 	fmt.Println("server", string(msg.Data))
 
 		case packetCollectionResponse:
-			fmt.Println("COLLECTION RESPONSE RECEIVED", client.Address())
 			data := bytes.NewBuffer(msg.Data)
 
 			namespaceName, _ := data.ReadString('\n')
@@ -95,6 +100,10 @@ func clientReadPackets(client *client.Node, node *Node) {
 
 			collectionName, _ := data.ReadString('\n')
 			collectionName = strings.TrimSuffix(collectionName, "\n")
+
+			if node.verbose {
+				fmt.Println("COLLECTION RESPONSE RECEIVED", client.Address(), namespaceName+"."+collectionName)
+			}
 
 			collection := namespace.collectionLoading(collectionName)
 			collection.readRecords(data)
@@ -109,7 +118,10 @@ func clientReadPackets(client *client.Node, node *Node) {
 			node.networkDeleteQueue <- msg
 
 		case packetClose:
-			fmt.Println("[client] Server closed!", client.Address())
+			if node.verbose {
+				fmt.Println("[client] Server closed!", client.Address())
+			}
+
 			client.Close()
 			client.Connect()
 
@@ -120,7 +132,10 @@ func clientReadPackets(client *client.Node, node *Node) {
 
 	close(node.networkSetQueue)
 	close(node.networkDeleteQueue)
-	fmt.Println(client.Address(), "clientReadPackets goroutine stopped")
+
+	if node.verbose {
+		fmt.Println(client.Address(), "clientReadPackets goroutine stopped")
+	}
 }
 
 // clientNetworkWorker ...
@@ -237,12 +252,14 @@ func networkDelete(msg *packet.Packet, db *Node) error {
 }
 
 // serverOnConnect ...
-func serverOnConnect(db *Node) func(*packet.Stream) {
+func serverOnConnect(node *Node) func(*packet.Stream) {
 	return func(stream *packet.Stream) {
-		fmt.Println("[server] New client", stream.Connection().RemoteAddr())
+		if node.verbose {
+			fmt.Println("[server] New client", stream.Connection().RemoteAddr())
+		}
 
 		// Start reading packets from the client
-		go serverReadPacketsFromClient(stream, db)
+		go serverReadPacketsFromClient(stream, node)
 	}
 }
 
