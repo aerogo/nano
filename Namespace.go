@@ -159,8 +159,8 @@ func (ns *Namespace) Close() {
 	})
 }
 
-// PrefetchData ...
-func (ns *Namespace) PrefetchData() {
+// Prefetch ...
+func (ns *Namespace) Prefetch() {
 	wg := sync.WaitGroup{}
 
 	for typeName := range ns.types {

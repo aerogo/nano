@@ -1,6 +1,7 @@
 package nano_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -34,6 +35,65 @@ func TestClusterClose(t *testing.T) {
 	for i := 0; i < nodeCount; i++ {
 		nodes[i].Close()
 	}
+}
+
+func TestClusterReconnect(t *testing.T) {
+	nodes := make([]*nano.Node, nodeCount)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i] = nano.New(port)
+		nodes[i].Namespace("test").RegisterTypes(types...)
+
+		if i == 0 {
+			assert.True(t, nodes[0].IsServer())
+			nodes[0].Namespace("test").Set("User", "1", newUser(1))
+		} else {
+			assert.False(t, nodes[i].IsServer())
+		}
+	}
+
+	// Wait for clients to connect
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	// Close server only
+	fmt.Println("testing server close")
+	nodes[0].Close()
+
+	// Wait a bit, to be safe
+	time.Sleep(50 * time.Millisecond)
+
+	// Restart server
+	fmt.Println("testing server restart")
+	nodes[0] = nano.New(port)
+	nodes[0].Namespace("test").RegisterTypes(types...)
+	assert.True(t, nodes[0].IsServer())
+
+	// Wait for clients to reconnect in the span of a few seconds
+	fmt.Println("testing client reconnect")
+	start := time.Now()
+
+	for nodes[0].Server().ClientCount() < nodeCount-1 {
+		time.Sleep(10 * time.Millisecond)
+
+		if time.Since(start) > time.Duration(2*time.Second) {
+			assert.Fail(t, "Not enough clients reconnected")
+			return
+		}
+	}
+
+	fmt.Println("testing namespace Get")
+	obj, err := nodes[1].Namespace("test").Get("User", "1")
+	assert.NoError(t, err)
+	assert.NotNil(t, obj)
+	assert.Equal(t, "1", obj.(*User).ID)
+
+	fmt.Println("End of test, closing")
+
+	// for i := 0; i < nodeCount; i++ {
+	// 	nodes[i].Close()
+	// }
 }
 
 func TestClusterDataSharing(t *testing.T) {

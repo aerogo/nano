@@ -97,7 +97,7 @@ func (collection *Collection) load() {
 		// Client
 		collection.ns.collectionsLoading.Store(collection.name, collection)
 		data := fmt.Sprintf("%s\n%s\n", collection.ns.name, collection.name)
-		collection.node.Client().Outgoing <- packet.New(packetCollectionRequest, []byte(data))
+		collection.node.Client().Stream.Outgoing <- packet.New(packetCollectionRequest, []byte(data))
 		<-collection.loaded
 	}
 }

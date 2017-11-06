@@ -1,6 +1,7 @@
 package nano
 
 import (
+	"fmt"
 	"net"
 	"runtime"
 	"sync"
@@ -103,8 +104,15 @@ func (node *Node) Clear() {
 
 // Close ...
 func (node *Node) Close() {
+	if node.IsServer() {
+		fmt.Println("[server] broadcast close")
+		node.Broadcast(packet.New(packetClose, nil))
+	}
+
+	// Close cluster node
 	node.node.Close()
 
+	// Close namespaces
 	node.namespaces.Range(func(key, value interface{}) bool {
 		namespace := value.(*Namespace)
 		namespace.Close()

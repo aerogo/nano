@@ -15,19 +15,24 @@ import (
 )
 
 // serverReadPacketsFromClient ...
-func serverReadPacketsFromClient(client *server.Client, db *Node) {
+func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 	for msg := range client.Incoming {
 		switch msg.Type {
-		case packetPong:
-			fmt.Println(string(msg.Data))
+		// case packetPing:
+		// 	fmt.Println("client", string(msg.Data))
+		// 	client.Outgoing <- packet.New(packetPong, []byte("pong"))
+
+		// case packetPong:
+		// 	fmt.Println("client", string(msg.Data))
 
 		case packetCollectionRequest:
+			fmt.Println("COLLECTION REQUEST", client.Connection().RemoteAddr())
 			data := bytes.NewBuffer(msg.Data)
 
 			namespaceName, _ := data.ReadString('\n')
 			namespaceName = strings.TrimSuffix(namespaceName, "\n")
 
-			namespace := db.Namespace(namespaceName)
+			namespace := node.Namespace(namespaceName)
 
 			collectionName, _ := data.ReadString('\n')
 			collectionName = strings.TrimSuffix(collectionName, "\n")
@@ -47,29 +52,40 @@ func serverReadPacketsFromClient(client *server.Client, db *Node) {
 			writer.Flush()
 
 			client.Outgoing <- packet.New(packetCollectionResponse, b.Bytes())
+			fmt.Println("COLLECTION REQUEST ANSWERED", client.Connection().RemoteAddr())
 
 		case packetSet:
-			if networkSet(msg, db) == nil {
-				serverBroadcast(client, msg)
+			if networkSet(msg, node) == nil {
+				serverBroadcast(node.Server(), client, msg)
 			}
 
 		case packetDelete:
-			if networkDelete(msg, db) == nil {
-				serverBroadcast(client, msg)
+			if networkDelete(msg, node) == nil {
+				serverBroadcast(node.Server(), client, msg)
 			}
+
+		case packetClose:
+			client.Close()
+
+		default:
+			fmt.Printf("Error: Unknown network packet type %d of length %d\n", msg.Type, msg.Length)
 		}
 	}
 }
 
 // clientReadPackets ...
 func clientReadPackets(client *client.Node, node *Node) {
-	for msg := range client.Incoming {
+	for msg := range client.Stream.Incoming {
 		switch msg.Type {
-		case packetPing:
-			fmt.Println(string(msg.Data))
-			client.Outgoing <- packet.New(packetPong, []byte("pong"))
+		// case packetPing:
+		// 	fmt.Println("server", string(msg.Data))
+		// 	client.Outgoing <- packet.New(packetPong, []byte("pong"))
+
+		// case packetPong:
+		// 	fmt.Println("server", string(msg.Data))
 
 		case packetCollectionResponse:
+			fmt.Println("COLLECTION RESPONSE RECEIVED", client.Address())
 			data := bytes.NewBuffer(msg.Data)
 
 			namespaceName, _ := data.ReadString('\n')
@@ -91,11 +107,20 @@ func clientReadPackets(client *client.Node, node *Node) {
 
 		case packetDelete:
 			node.networkDeleteQueue <- msg
+
+		case packetClose:
+			fmt.Println("[client] Server closed!", client.Address())
+			client.Close()
+			client.Connect()
+
+		default:
+			fmt.Printf("Error: Unknown network packet type %d of length %d\n", msg.Type, msg.Length)
 		}
 	}
 
 	close(node.networkSetQueue)
 	close(node.networkDeleteQueue)
+	fmt.Println(client.Address(), "clientReadPackets goroutine stopped")
 }
 
 // clientNetworkWorker ...
@@ -212,20 +237,20 @@ func networkDelete(msg *packet.Packet, db *Node) error {
 }
 
 // serverOnConnect ...
-func serverOnConnect(db *Node) func(*server.Client) {
-	return func(client *server.Client) {
-		// fmt.Println("New client", client.Connection.RemoteAddr())
+func serverOnConnect(db *Node) func(*packet.Stream) {
+	return func(stream *packet.Stream) {
+		fmt.Println("[server] New client", stream.Connection().RemoteAddr())
 
 		// Start reading packets from the client
-		go serverReadPacketsFromClient(client, db)
+		go serverReadPacketsFromClient(stream, db)
 	}
 }
 
 // serverBroadcast ...
-func serverBroadcast(client *server.Client, msg *packet.Packet) {
-	fromRemoteClient := client.Node.IsRemoteAddress(client.Connection.RemoteAddr())
+func serverBroadcast(serverNode *server.Node, client *packet.Stream, msg *packet.Packet) {
+	fromRemoteClient := serverNode.IsRemoteAddress(client.Connection().RemoteAddr())
 
-	for targetClient := range client.Node.AllClients() {
+	for targetClient := range serverNode.AllClients() {
 		// Ignore the client who sent us the packet in the first place
 		if targetClient == client {
 			continue
@@ -233,7 +258,7 @@ func serverBroadcast(client *server.Client, msg *packet.Packet) {
 
 		// Do not send packets from remote clients to other remote clients.
 		// Every node is responsible for notifying other remote nodes about changes.
-		if fromRemoteClient && client.Node.IsRemoteAddress(targetClient.Connection.RemoteAddr()) {
+		if fromRemoteClient && serverNode.IsRemoteAddress(targetClient.Connection().RemoteAddr()) {
 			continue
 		}
 

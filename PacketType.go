@@ -8,4 +8,5 @@ const (
 	packetSet                = iota
 	packetDelete             = iota
 	packetClear              = iota
+	packetClose              = iota
 )
