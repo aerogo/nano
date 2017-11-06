@@ -142,15 +142,15 @@ func BenchmarkClusterSet(b *testing.B) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	i := int64(0)
+	counter := int64(0)
 
 	// Run benchmark
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			atomic.AddInt64(&i, 1)
-			id := int(atomic.LoadInt64(&i))
+			atomic.AddInt64(&counter, 1)
+			id := int(atomic.LoadInt64(&counter))
 			nodes[id%nodeCount].Namespace("test").Set("User", strconv.Itoa(id), newUser(id))
 		}
 	})
@@ -177,15 +177,15 @@ func BenchmarkClusterDelete(b *testing.B) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	i := int64(0)
+	counter := int64(0)
 
 	// Run benchmark
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			atomic.AddInt64(&i, 1)
-			id := int(atomic.LoadInt64(&i))
+			atomic.AddInt64(&counter, 1)
+			id := int(atomic.LoadInt64(&counter))
 			nodes[id%nodeCount].Namespace("test").Delete("User", strconv.Itoa(id))
 		}
 	})
