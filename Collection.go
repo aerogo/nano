@@ -242,7 +242,11 @@ func (collection *Collection) flush() error {
 	collection.fileMutex.Lock()
 	defer collection.fileMutex.Unlock()
 
-	file, err := os.OpenFile(path.Join(collection.ns.root, collection.name+".dat"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	newFilePath := path.Join(collection.ns.root, collection.name+".new")
+	oldFilePath := path.Join(collection.ns.root, collection.name+".dat")
+	tmpFilePath := path.Join(collection.ns.root, collection.name+".tmp")
+
+	file, err := os.OpenFile(newFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 
 	if err != nil {
 		return err
@@ -263,7 +267,26 @@ func (collection *Collection) flush() error {
 		return err
 	}
 
-	return file.Close()
+	err = file.Close()
+
+	if err != nil {
+		return err
+	}
+
+	// Swap .dat and .new files
+	err = os.Rename(oldFilePath, tmpFilePath)
+
+	if err != nil {
+		return err
+	}
+
+	err = os.Rename(newFilePath, oldFilePath)
+
+	if err != nil {
+		return err
+	}
+
+	return os.Remove(tmpFilePath)
 }
 
 // writeRecords ...
