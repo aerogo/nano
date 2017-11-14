@@ -59,11 +59,14 @@ func TestClusterReconnect(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
+	nodes[2].Namespace("test").Set("User", "2", newUser(2))
+	assert.True(t, nodes[2].Namespace("test").Exists("User", "2"))
+
 	// Close server only
 	nodes[0].Close()
 
-	// Wait a bit, to be safe
-	time.Sleep(50 * time.Millisecond)
+	// Wait a bit, to test some real downtime
+	time.Sleep(1500 * time.Millisecond)
 
 	// Restart server
 	nodes[0] = nano.New(port)
@@ -81,10 +84,17 @@ func TestClusterReconnect(t *testing.T) {
 		}
 	}
 
-	obj, err := nodes[1].Namespace("test").Get("User", "1")
-	assert.NoError(t, err)
-	assert.NotNil(t, obj)
-	assert.Equal(t, "1", obj.(*User).ID)
+	for i := 0; i < nodeCount; i++ {
+		obj, err := nodes[i].Namespace("test").Get("User", "1")
+		assert.NoError(t, err)
+		assert.NotNil(t, obj)
+		assert.Equal(t, "1", obj.(*User).ID)
+
+		obj, err = nodes[i].Namespace("test").Get("User", "2")
+		assert.NoError(t, err)
+		assert.NotNil(t, obj)
+		assert.Equal(t, "2", obj.(*User).ID)
+	}
 
 	for i := nodeCount - 1; i >= 0; i-- {
 		nodes[i].Close()
