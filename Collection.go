@@ -276,7 +276,7 @@ func (collection *Collection) flush() error {
 	// Swap .dat and .new files
 	err = os.Rename(oldFilePath, tmpFilePath)
 
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
@@ -286,7 +286,13 @@ func (collection *Collection) flush() error {
 		return err
 	}
 
-	return os.Remove(tmpFilePath)
+	err = os.Remove(tmpFilePath)
+
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	return nil
 }
 
 // writeRecords ...
