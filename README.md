@@ -1,6 +1,8 @@
 # nano
 
-High-performance database.
+[![Godoc reference](https://godoc.org/github.com/aerogo/nano?status.svg)](https://godoc.org/github.com/aerogo/nano)
+
+High-performance database. Basically network synchronized hashmaps.
 
 ## Benchmarks
 
@@ -10,3 +12,4 @@ BenchmarkCollectionSet-8      	20000000	       107 ns/op	      32 B/op	       2 
 BenchmarkCollectionDelete-8   	100000000	        18.8 ns/op	       1 B/op	       0 allocs/op
 BenchmarkCollectionAll-8      	    1000	   1099789 ns/op	   96553 B/op	      42 allocs/op
 ```
+
