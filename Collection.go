@@ -85,7 +85,11 @@ func (collection *Collection) load() {
 
 				case <-collection.close:
 					if len(collection.dirty) > 0 {
-						collection.flush()
+						err := collection.flush()
+
+						if err != nil {
+							fmt.Println("Error writing collection", collection.name, "to disk", err)
+						}
 					}
 
 					close(collection.close)

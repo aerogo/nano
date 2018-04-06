@@ -1,9 +1,9 @@
 package nano_test
 
 import (
+	"reflect"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/aerogo/nano"
 	"github.com/stretchr/testify/assert"
@@ -11,10 +11,11 @@ import (
 
 func TestNamespaceGet(t *testing.T) {
 	node := nano.New(port)
-	db := node.Namespace("test").RegisterTypes(types...)
-	assert.True(t, node.IsServer())
 	defer node.Close()
 	defer node.Clear()
+
+	db := node.Namespace("test").RegisterTypes(types...)
+	assert.True(t, node.IsServer())
 
 	db.Set("User", "1", newUser(1))
 	db.Set("User", "2", newUser(2))
@@ -29,12 +30,38 @@ func TestNamespaceGet(t *testing.T) {
 	assert.NotNil(t, val)
 }
 
-func TestNamespaceSet(t *testing.T) {
+func TestNamespaceGetMany(t *testing.T) {
 	node := nano.New(port)
-	db := node.Namespace("test").RegisterTypes(types...)
-	assert.True(t, node.IsServer())
 	defer node.Close()
 	defer node.Clear()
+
+	db := node.Namespace("test").RegisterTypes(types...)
+	assert.True(t, node.IsServer())
+
+	db.Set("User", "1", newUser(1))
+	db.Set("User", "2", newUser(2))
+
+	objects := db.GetMany("User", []string{
+		"1",
+		"2",
+	})
+
+	assert.Len(t, objects, 2)
+
+	for _, object := range objects {
+		user, ok := object.(*User)
+		assert.True(t, ok)
+		assert.Equal(t, "Test User", user.Name)
+	}
+}
+
+func TestNamespaceSet(t *testing.T) {
+	node := nano.New(port)
+	defer node.Close()
+	defer node.Clear()
+
+	db := node.Namespace("test").RegisterTypes(types...)
+	assert.True(t, node.IsServer())
 
 	db.Set("User", "1", newUser(1))
 	db.Delete("User", "2")
@@ -45,10 +72,11 @@ func TestNamespaceSet(t *testing.T) {
 
 func TestNamespaceClear(t *testing.T) {
 	node := nano.New(port)
-	db := node.Namespace("test").RegisterTypes(types...)
-	assert.True(t, node.IsServer())
 	defer node.Close()
 	defer node.Clear()
+
+	db := node.Namespace("test").RegisterTypes(types...)
+	assert.True(t, node.IsServer())
 
 	db.Set("User", "1", newUser(1))
 	db.Set("User", "2", newUser(2))
@@ -91,13 +119,37 @@ func TestNamespaceAll(t *testing.T) {
 
 func TestNamespaceClose(t *testing.T) {
 	node := nano.New(port)
+
 	assert.True(t, node.IsServer())
 	assert.False(t, node.IsClosed())
 
 	node.Close()
 
-	time.Sleep(100 * time.Millisecond)
 	assert.True(t, node.IsClosed())
+}
+
+func TestNamespaceTypes(t *testing.T) {
+	node := nano.New(port)
+	defer node.Close()
+
+	db := node.Namespace("test").RegisterTypes(types...)
+	assert.Equal(t, reflect.TypeOf(User{}), db.Types()["User"])
+}
+
+func TestNamespacePrefetch(t *testing.T) {
+	node := nano.New(port)
+	defer node.Close()
+
+	db := node.Namespace("test").RegisterTypes(types...)
+	db.Prefetch()
+}
+
+func TestNamespaceNode(t *testing.T) {
+	node := nano.New(port)
+	defer node.Close()
+
+	db := node.Namespace("test").RegisterTypes(types...)
+	assert.Equal(t, db.Node(), node)
 }
 
 // func TestNamespaceColdStart(t *testing.T) {
