@@ -168,7 +168,7 @@ func TestClusterSet(t *testing.T) {
 	})
 
 	// Wait until it propagates through the whole cluster
-	time.Sleep(150 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
 	// Confirm that all nodes have the record now
 	for i := 0; i < nodeCount; i++ {
