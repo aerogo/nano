@@ -119,7 +119,7 @@ func (collection *Collection) Get(key string) (interface{}, error) {
 
 // GetMany ...
 func (collection *Collection) GetMany(keys []string) []interface{} {
-	values := make([]interface{}, len(keys), len(keys))
+	values := make([]interface{}, len(keys))
 
 	for i := 0; i < len(keys); i++ {
 		values[i], _ = collection.Get(keys[i])

@@ -172,7 +172,7 @@ func clientNetworkWorker(node *Node) {
 func networkSet(msg *packet.Packet, db *Node) error {
 	data := bytes.NewBuffer(msg.Data)
 
-	packetTimeBuffer := make([]byte, 8, 8)
+	packetTimeBuffer := make([]byte, 8)
 	data.Read(packetTimeBuffer)
 	packetTime, err := packet.Int64FromBytes(packetTimeBuffer)
 
@@ -223,7 +223,7 @@ func networkSet(msg *packet.Packet, db *Node) error {
 func networkDelete(msg *packet.Packet, db *Node) error {
 	data := bytes.NewBuffer(msg.Data)
 
-	packetTimeBuffer := make([]byte, 8, 8)
+	packetTimeBuffer := make([]byte, 8)
 	data.Read(packetTimeBuffer)
 	packetTime, err := packet.Int64FromBytes(packetTimeBuffer)
 
