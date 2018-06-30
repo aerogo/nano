@@ -17,6 +17,12 @@ BenchmarkCollectionDelete-8   	100000000	        18.8 ns/op	       1 B/op	      
 BenchmarkCollectionAll-8      	    1000	   1099789 ns/op	   96553 B/op	      42 allocs/op
 ```
 
+## Author
+
+| [![Eduard Urbach on Twitter](https://gravatar.com/avatar/16ed4d41a5f244d1b10de1b791657989?s=70)](https://twitter.com/eduardurbach "Follow @eduardurbach on Twitter") |
+|---|
+| [Eduard Urbach](https://eduardurbach.com) |
+
 [godoc-image]: https://godoc.org/github.com/aerogo/nano?status.svg
 [godoc-url]: https://godoc.org/github.com/aerogo/nano
 [goreportcard-image]: https://goreportcard.com/badge/github.com/aerogo/nano
