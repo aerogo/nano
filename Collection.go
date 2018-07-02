@@ -3,7 +3,6 @@ package nano
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	"github.com/aerogo/packet"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // ChannelBufferSize is the size of the channels used to iterate over a whole collection.
@@ -147,7 +147,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 		// It's important to store the timestamp BEFORE the actual collection.set
 		collection.lastModification.Store(key, time.Now().UnixNano())
 
-		jsonBytes, err := json.Marshal(value)
+		jsonBytes, err := jsoniter.Marshal(value)
 
 		if err != nil {
 			panic(err)
@@ -318,7 +318,7 @@ func (collection *Collection) writeRecords(bufferedWriter *bufio.Writer, sorted 
 	}
 
 	for _, record := range records {
-		valueBytes, err := json.Marshal(record.value)
+		valueBytes, err := jsoniter.Marshal(record.value)
 
 		if err != nil {
 			panic(err)
@@ -370,7 +370,7 @@ func (collection *Collection) readRecords(stream io.Reader) {
 			value = line
 			v := reflect.New(collection.typ)
 			obj := v.Interface()
-			json.Unmarshal(value, &obj)
+			jsoniter.Unmarshal(value, &obj)
 			collection.data.Store(key, obj)
 		}
 

@@ -3,7 +3,6 @@ package nano
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -12,6 +11,7 @@ import (
 	"github.com/aerogo/cluster/client"
 	"github.com/aerogo/cluster/server"
 	"github.com/aerogo/packet"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // serverReadPacketsFromClient ...
@@ -193,7 +193,7 @@ func networkSet(msg *packet.Packet, db *Node) error {
 	jsonBytes = bytes.TrimSuffix(jsonBytes, []byte("\n"))
 
 	value := reflect.New(collection.typ).Interface()
-	err = json.Unmarshal(jsonBytes, &value)
+	err = jsoniter.Unmarshal(jsonBytes, &value)
 
 	if err != nil {
 		return err
