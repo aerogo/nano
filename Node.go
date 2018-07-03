@@ -16,7 +16,7 @@ import (
 // Force interface implementation
 var _ cluster.Node = (*Node)(nil)
 
-// Node ...
+// Node represents a single database node in the cluster.
 type Node struct {
 	namespaces         sync.Map
 	node               cluster.Node
