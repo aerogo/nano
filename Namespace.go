@@ -159,7 +159,7 @@ func (ns *Namespace) Close() {
 	})
 }
 
-// Prefetch ...
+// Prefetch loads all the data for this namespace from disk into memory.
 func (ns *Namespace) Prefetch() {
 	wg := sync.WaitGroup{}
 

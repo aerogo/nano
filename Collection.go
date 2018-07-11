@@ -225,7 +225,7 @@ func (collection *Collection) Exists(key string) bool {
 	return exists
 }
 
-// All ...
+// All returns a channel of all objects in the collection.
 func (collection *Collection) All() chan interface{} {
 	channel := make(chan interface{}, ChannelBufferSize)
 
