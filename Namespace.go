@@ -137,6 +137,11 @@ func (ns *Namespace) Types() map[string]reflect.Type {
 	return ns.types
 }
 
+// HasType ...
+func (ns *Namespace) HasType(typeName string) bool {
+	return ns.types[typeName] != nil
+}
+
 // Node ...
 func (ns *Namespace) Node() *Node {
 	return ns.node
