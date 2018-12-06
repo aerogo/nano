@@ -300,7 +300,7 @@ func (collection *Collection) flush() error {
 }
 
 // writeRecords ...
-func (collection *Collection) writeRecords(bufferedWriter *bufio.Writer, sorted bool) {
+func (collection *Collection) writeRecords(writer io.Writer, sorted bool) {
 	records := []keyValue{}
 
 	collection.data.Range(func(key, value interface{}) bool {
@@ -317,18 +317,20 @@ func (collection *Collection) writeRecords(bufferedWriter *bufio.Writer, sorted 
 		})
 	}
 
+	newLine := []byte{'\n'}
+	encoder := jsoniter.NewEncoder(writer)
+
 	for _, record := range records {
-		valueBytes, err := jsoniter.Marshal(record.value)
+		// Key in the first line
+		writer.Write([]byte(record.key))
+		writer.Write(newLine)
+
+		// Value in the second line
+		err := encoder.Encode(record.value)
 
 		if err != nil {
 			panic(err)
 		}
-
-		bufferedWriter.WriteString(record.key)
-		bufferedWriter.WriteByte('\n')
-
-		bufferedWriter.Write(valueBytes)
-		bufferedWriter.WriteByte('\n')
 	}
 }
 
