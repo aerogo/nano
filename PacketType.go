@@ -5,7 +5,7 @@ const (
 	packetCollectionResponse = iota
 	packetSet                = iota
 	packetDelete             = iota
-	packetClose              = iota
+	packetServerClose        = iota
 
 	// packetPing               = iota
 	// packetPong               = iota

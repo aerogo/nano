@@ -46,13 +46,13 @@ func newCollection(ns *Namespace, name string) *Collection {
 		loaded: make(chan bool),
 	}
 
-	t, exists := collection.ns.types[collection.name]
+	t, exists := collection.ns.types.Load(collection.name)
 
 	if !exists {
 		panic("Type " + collection.name + " has not been defined")
 	}
 
-	collection.typ = t
+	collection.typ = t.(reflect.Type)
 	collection.load()
 
 	return collection

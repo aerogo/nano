@@ -70,17 +70,18 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 				serverBroadcast(node.Server(), client, msg)
 			}
 
-		case packetClose:
-			client.Close()
-
 		default:
 			fmt.Printf("Error: Unknown network packet type %d of length %d\n", msg.Type, msg.Length)
 		}
 	}
+
+	if node.verbose {
+		fmt.Println("[server] Client disconnected", client.Connection().RemoteAddr())
+	}
 }
 
-// clientReadPackets ...
-func clientReadPackets(client *client.Node, node *Node) {
+// clientReadPacketsFromServer ...
+func clientReadPacketsFromServer(client *client.Node, node *Node) {
 	for msg := range client.Stream.Incoming {
 		switch msg.Type {
 		// case packetPing:
@@ -117,7 +118,7 @@ func clientReadPackets(client *client.Node, node *Node) {
 		case packetDelete:
 			node.networkDeleteQueue <- msg
 
-		case packetClose:
+		case packetServerClose:
 			if node.verbose {
 				fmt.Println("[client] Server closed!", client.Address())
 			}
@@ -143,7 +144,7 @@ func clientReadPackets(client *client.Node, node *Node) {
 	close(node.networkDeleteQueue)
 
 	if node.verbose {
-		fmt.Println(client.Address(), "clientReadPackets goroutine stopped")
+		fmt.Println(client.Address(), "clientReadPacketsFromServer goroutine stopped")
 	}
 }
 

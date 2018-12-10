@@ -110,7 +110,7 @@ func (node *Node) Close() {
 			fmt.Println("[server] broadcast close")
 		}
 
-		node.Broadcast(packet.New(packetClose, nil))
+		node.Broadcast(packet.New(packetServerClose, nil))
 	}
 
 	// Close cluster node
@@ -133,7 +133,7 @@ func (node *Node) connect() {
 		node.server.OnConnect(serverOnConnect(node))
 	} else {
 		node.client = node.node.(*client.Node)
-		go clientReadPackets(node.client, node)
+		go clientReadPacketsFromServer(node.client, node)
 
 		for i := 0; i < runtime.NumCPU(); i++ {
 			go clientNetworkWorker(node)

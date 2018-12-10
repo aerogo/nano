@@ -15,7 +15,7 @@ type Namespace struct {
 	collectionsLoading sync.Map
 	name               string
 	root               string
-	types              map[string]reflect.Type
+	types              sync.Map
 	node               *Node
 }
 
@@ -30,10 +30,9 @@ func newNamespace(node *Node, name string) *Namespace {
 
 	// Create namespace
 	namespace := &Namespace{
-		node:  node,
-		name:  name,
-		root:  path.Join(user.HomeDir, ".aero", "db", name),
-		types: make(map[string]reflect.Type),
+		node: node,
+		name: name,
+		root: path.Join(user.HomeDir, ".aero", "db", name),
 	}
 
 	// Create directory
@@ -52,7 +51,7 @@ func (ns *Namespace) RegisterTypes(types ...interface{}) *Namespace {
 			typeInfo = typeInfo.Elem()
 		}
 
-		ns.types[typeInfo.Name()] = typeInfo
+		ns.types.Store(typeInfo.Name(), typeInfo)
 	}
 
 	return ns
@@ -134,12 +133,20 @@ func (ns *Namespace) ClearAll() {
 
 // Types ...
 func (ns *Namespace) Types() map[string]reflect.Type {
-	return ns.types
+	copied := make(map[string]reflect.Type)
+
+	ns.types.Range(func(key, value interface{}) bool {
+		copied[key.(string)] = value.(reflect.Type)
+		return true
+	})
+
+	return copied
 }
 
 // HasType ...
 func (ns *Namespace) HasType(typeName string) bool {
-	return ns.types[typeName] != nil
+	_, exists := ns.types.Load(typeName)
+	return exists
 }
 
 // Node ...
@@ -168,14 +175,17 @@ func (ns *Namespace) Close() {
 func (ns *Namespace) Prefetch() {
 	wg := sync.WaitGroup{}
 
-	for typeName := range ns.types {
+	ns.types.Range(func(key, value interface{}) bool {
+		typeName := key.(string)
 		wg.Add(1)
 
 		go func(name string) {
 			ns.Collection(name)
 			wg.Done()
 		}(typeName)
-	}
+
+		return true
+	})
 
 	wg.Wait()
 }
