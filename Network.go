@@ -62,12 +62,12 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 
 		case packetSet:
 			if networkSet(msg, node) == nil {
-				serverBroadcast(node.Server(), client, msg)
+				serverForwardPacket(node.Server(), client, msg)
 			}
 
 		case packetDelete:
 			if networkDelete(msg, node) == nil {
-				serverBroadcast(node.Server(), client, msg)
+				serverForwardPacket(node.Server(), client, msg)
 			}
 
 		default:
@@ -84,13 +84,6 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 func clientReadPacketsFromServer(client *client.Node, node *Node) {
 	for msg := range client.Stream.Incoming {
 		switch msg.Type {
-		// case packetPing:
-		// 	fmt.Println("server", string(msg.Data))
-		// 	client.Outgoing <- packet.New(packetPong, []byte("pong"))
-
-		// case packetPong:
-		// 	fmt.Println("server", string(msg.Data))
-
 		case packetCollectionResponse:
 			data := bytes.NewBuffer(msg.Data)
 
@@ -112,11 +105,8 @@ func clientReadPacketsFromServer(client *client.Node, node *Node) {
 			namespace.collectionsLoading.Delete(collectionName)
 			close(collection.loaded)
 
-		case packetSet:
-			node.networkSetQueue <- msg
-
-		case packetDelete:
-			node.networkDeleteQueue <- msg
+		case packetSet, packetDelete:
+			node.networkWorkerQueue <- msg
 
 		case packetServerClose:
 			if node.verbose {
@@ -140,36 +130,27 @@ func clientReadPacketsFromServer(client *client.Node, node *Node) {
 		}
 	}
 
-	close(node.networkSetQueue)
-	close(node.networkDeleteQueue)
+	close(node.networkWorkerQueue)
 
 	if node.verbose {
 		fmt.Println(client.Address(), "clientReadPacketsFromServer goroutine stopped")
 	}
 }
 
-// clientNetworkWorker ...
+// clientNetworkWorker runs in a separate goroutine and handles the set & delete packets.
 func clientNetworkWorker(node *Node) {
-	for {
-		select {
-		case msg, ok := <-node.networkSetQueue:
-			if !ok {
-				return
-			}
-
+	for msg := range node.networkWorkerQueue {
+		switch msg.Type {
+		case packetSet:
 			networkSet(msg, node)
 
-		case msg, ok := <-node.networkDeleteQueue:
-			if !ok {
-				return
-			}
-
+		case packetDelete:
 			networkDelete(msg, node)
 		}
 	}
 }
 
-// networkSet ...
+// networkSet performs a set operation based on the information in the network packet.
 func networkSet(msg *packet.Packet, db *Node) error {
 	data := bytes.NewBuffer(msg.Data)
 
@@ -220,7 +201,7 @@ func networkSet(msg *packet.Packet, db *Node) error {
 	return nil
 }
 
-// networkDelete ...
+// networkDelete performs a delete operation based on the information in the network packet.
 func networkDelete(msg *packet.Packet, db *Node) error {
 	data := bytes.NewBuffer(msg.Data)
 
@@ -273,8 +254,8 @@ func serverOnConnect(node *Node) func(*packet.Stream) {
 	}
 }
 
-// serverBroadcast ...
-func serverBroadcast(serverNode *server.Node, client *packet.Stream, msg *packet.Packet) {
+// serverForwardPacket forwards the packet from the given client to other clients.
+func serverForwardPacket(serverNode *server.Node, client *packet.Stream, msg *packet.Packet) {
 	fromRemoteClient := serverNode.IsRemoteAddress(client.Connection().RemoteAddr())
 
 	for targetClient := range serverNode.AllClients() {
@@ -290,7 +271,13 @@ func serverBroadcast(serverNode *server.Node, client *packet.Stream, msg *packet
 		}
 
 		// Send packet
-		targetClient.Outgoing <- msg
+		select {
+		case targetClient.Outgoing <- msg:
+			// Send successful.
+		default:
+			// Discard packet.
+			// TODO: Find a better solution to deal with this.
+		}
 	}
 }
 

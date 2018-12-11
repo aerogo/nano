@@ -6,8 +6,4 @@ const (
 	packetSet                = iota
 	packetDelete             = iota
 	packetServerClose        = iota
-
-	// packetPing               = iota
-	// packetPong               = iota
-	// packetClear              = iota
 )

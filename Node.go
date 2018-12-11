@@ -25,8 +25,7 @@ type Node struct {
 	port               int
 	hosts              []string
 	ioSleepTime        time.Duration
-	networkSetQueue    chan *packet.Packet
-	networkDeleteQueue chan *packet.Packet
+	networkWorkerQueue chan *packet.Packet
 	verbose            bool
 }
 
@@ -37,8 +36,7 @@ func New(port int, hosts ...string) *Node {
 		port:               port,
 		hosts:              hosts,
 		ioSleepTime:        1 * time.Millisecond,
-		networkSetQueue:    make(chan *packet.Packet, 8192),
-		networkDeleteQueue: make(chan *packet.Packet, 8192),
+		networkWorkerQueue: make(chan *packet.Packet, 8192),
 	}
 
 	node.connect()
