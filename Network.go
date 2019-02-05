@@ -166,9 +166,13 @@ func networkSet(msg *packet.Packet, db *Node) error {
 	namespace := db.Namespace(namespaceName)
 
 	collectionName := readLine(data)
-	collection := namespace.Collection(collectionName)
-	<-collection.loaded
+	collectionObj, exists := namespace.collections.Load(collectionName)
 
+	if !exists || collectionObj == nil {
+		return errors.New("Received networkSet command on non-existing collection")
+	}
+
+	collection := collectionObj.(*Collection)
 	key := readLine(data)
 
 	jsonBytes, _ := data.ReadBytes('\n')
@@ -217,9 +221,13 @@ func networkDelete(msg *packet.Packet, db *Node) error {
 	namespace := db.Namespace(namespaceName)
 
 	collectionName := readLine(data)
-	collection := namespace.Collection(collectionName)
-	<-collection.loaded
+	collectionObj, exists := namespace.collections.Load(collectionName)
 
+	if !exists || collectionObj == nil {
+		return errors.New("Received networkDelete command on non-existing collection")
+	}
+
+	collection := collectionObj.(*Collection)
 	key := readLine(data)
 
 	// Check timestamp
