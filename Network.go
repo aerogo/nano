@@ -14,7 +14,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-// serverReadPacketsFromClient ...
+// serverReadPacketsFromClient reads packets from clients on the server side.
 func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 	for msg := range client.Incoming {
 		switch msg.Type {
@@ -80,7 +80,7 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 	}
 }
 
-// clientReadPacketsFromServer ...
+// clientReadPacketsFromServer reads packets from the server on the client side.
 func clientReadPacketsFromServer(client *client.Node, node *Node) {
 	for msg := range client.Stream.Incoming {
 		switch msg.Type {

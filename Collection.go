@@ -21,7 +21,7 @@ import (
 // ChannelBufferSize is the size of the channels used to iterate over a whole collection.
 const ChannelBufferSize = 128
 
-// Collection ...
+// Collection is a hash map of data of the same type that is synchronized across network and disk.
 type Collection struct {
 	data             sync.Map
 	lastModification sync.Map
@@ -35,7 +35,7 @@ type Collection struct {
 	typ              reflect.Type
 }
 
-// newCollection ...
+// newCollection creates a new collection in the namespace with the given name.
 func newCollection(ns *Namespace, name string) *Collection {
 	collection := &Collection{
 		ns:     ns,
@@ -106,7 +106,7 @@ func (collection *Collection) load() {
 	}
 }
 
-// Get ...
+// Get returns the value for the given key.
 func (collection *Collection) Get(key string) (interface{}, error) {
 	val, ok := collection.data.Load(key)
 
@@ -117,7 +117,7 @@ func (collection *Collection) Get(key string) (interface{}, error) {
 	return val, nil
 }
 
-// GetMany ...
+// GetMany is the same as Get, except it looks up multiple keys at once.
 func (collection *Collection) GetMany(keys []string) []interface{} {
 	values := make([]interface{}, len(keys))
 
@@ -128,7 +128,7 @@ func (collection *Collection) GetMany(keys []string) []interface{} {
 	return values
 }
 
-// set ...
+// set is the internally used function to store a value for a key.
 func (collection *Collection) set(key string, value interface{}) {
 	collection.data.Store(key, value)
 
@@ -137,7 +137,7 @@ func (collection *Collection) set(key string, value interface{}) {
 	}
 }
 
-// Set ...
+// Set sets the value for the key.
 func (collection *Collection) Set(key string, value interface{}) {
 	if value == nil {
 		return
@@ -171,7 +171,7 @@ func (collection *Collection) Set(key string, value interface{}) {
 	collection.set(key, value)
 }
 
-// delete ...
+// delete is the internally used command to delete a key.
 func (collection *Collection) delete(key string) {
 	collection.data.Delete(key)
 
@@ -180,7 +180,7 @@ func (collection *Collection) delete(key string) {
 	}
 }
 
-// Delete ...
+// Delete deletes a key from the collection.
 func (collection *Collection) Delete(key string) bool {
 	if collection.node.broadcastRequired() {
 		// It's important to store the timestamp BEFORE the actual collection.delete
@@ -219,7 +219,7 @@ func (collection *Collection) Clear() {
 	}
 }
 
-// Exists ...
+// Exists returns whether or not the key exists.
 func (collection *Collection) Exists(key string) bool {
 	_, exists := collection.data.Load(key)
 	return exists
@@ -299,7 +299,7 @@ func (collection *Collection) flush() error {
 	return nil
 }
 
-// writeRecords ...
+// writeRecords writes the entire collection to the IO writer.
 func (collection *Collection) writeRecords(writer io.Writer, sorted bool) {
 	records := []keyValue{}
 
@@ -334,7 +334,7 @@ func (collection *Collection) writeRecords(writer io.Writer, sorted bool) {
 	}
 }
 
-// loadFromDisk ...
+// loadFromDisk loads the entire collection from disk.
 func (collection *Collection) loadFromDisk() {
 	filePath := path.Join(collection.ns.root, collection.name+".dat")
 	stream, err := os.OpenFile(filePath, os.O_RDONLY|os.O_SYNC, 0644)
@@ -350,7 +350,7 @@ func (collection *Collection) loadFromDisk() {
 	collection.readRecords(stream)
 }
 
-// readRecords ...
+// readRecords reads the entire collection from an IO reader.
 func (collection *Collection) readRecords(stream io.Reader) {
 	var key string
 	var value []byte

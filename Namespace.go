@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Namespace ...
+// Namespace combines multiple collections under a single name.
 type Namespace struct {
 	collections        sync.Map
 	collectionsLoading sync.Map
@@ -57,7 +57,7 @@ func (ns *Namespace) RegisterTypes(types ...interface{}) *Namespace {
 	return ns
 }
 
-// Collection ...
+// Collection returns the collection with the given name.
 func (ns *Namespace) Collection(name string) *Collection {
 	obj, loaded := ns.collections.LoadOrStore(name, nil)
 
@@ -82,22 +82,22 @@ func (ns *Namespace) collectionLoading(name string) *Collection {
 	return obj.(*Collection)
 }
 
-// Get ...
+// Get returns the value for the given key.
 func (ns *Namespace) Get(collection string, key string) (interface{}, error) {
 	return ns.Collection(collection).Get(key)
 }
 
-// GetMany ...
+// GetMany is the same as Get, except it looks up multiple keys at once.
 func (ns *Namespace) GetMany(collection string, keys []string) []interface{} {
 	return ns.Collection(collection).GetMany(keys)
 }
 
-// Set ...
+// Set sets the value for the key.
 func (ns *Namespace) Set(collection string, key string, value interface{}) {
 	ns.Collection(collection).Set(key, value)
 }
 
-// Delete ...
+// Delete deletes a key from the collection.
 func (ns *Namespace) Delete(collection string, key string) bool {
 	return ns.Collection(collection).Delete(key)
 }
