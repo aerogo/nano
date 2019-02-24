@@ -250,7 +250,9 @@ func networkDelete(msg *packet.Packet, db *Node) error {
 	return nil
 }
 
-// serverOnConnect ...
+// serverOnConnect returns a function that can be used as a parameter
+// for the OnConnect method. It is called every time a new client connects
+// to the node.
 func serverOnConnect(node *Node) func(*packet.Stream) {
 	return func(stream *packet.Stream) {
 		if node.verbose {
@@ -289,7 +291,7 @@ func serverForwardPacket(serverNode *server.Node, client *packet.Stream, msg *pa
 	}
 }
 
-// readLine ...
+// readLine reads a single line from the byte buffer and will not include the line break character.
 func readLine(data *bytes.Buffer) string {
 	line, _ := data.ReadString('\n')
 	line = strings.TrimSuffix(line, "\n")

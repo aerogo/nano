@@ -19,7 +19,7 @@ type Namespace struct {
 	node               *Node
 }
 
-// newNamespace ...
+// newNamespace is the internal function used to create a new namespace.
 func newNamespace(node *Node, name string) *Namespace {
 	// Get user info to access the home directory
 	user, err := user.Current()
@@ -41,7 +41,9 @@ func newNamespace(node *Node, name string) *Namespace {
 	return namespace
 }
 
-// RegisterTypes ...
+// RegisterTypes expects a list of pointers and will look up the types
+// of the given pointers. These types will be registered so that collections
+// can store data using the given type. Note that nil pointers are acceptable.
 func (ns *Namespace) RegisterTypes(types ...interface{}) *Namespace {
 	// Convert example objects to their respective types
 	for _, example := range types {
@@ -102,22 +104,23 @@ func (ns *Namespace) Delete(collection string, key string) bool {
 	return ns.Collection(collection).Delete(key)
 }
 
-// Exists ...
+// Exists returns whether or not the key exists.
 func (ns *Namespace) Exists(collection string, key string) bool {
 	return ns.Collection(collection).Exists(key)
 }
 
-// All ...
+// All returns a channel of all objects in the collection.
 func (ns *Namespace) All(name string) chan interface{} {
 	return ns.Collection(name).All()
 }
 
-// Clear ...
+// Clear deletes all objects from the collection.
 func (ns *Namespace) Clear(collection string) {
 	ns.Collection(collection).Clear()
 }
 
-// ClearAll ...
+// ClearAll deletes all objects from all collections,
+// effectively resetting the entire database.
 func (ns *Namespace) ClearAll() {
 	ns.collections.Range(func(key, value interface{}) bool {
 		if value == nil {
@@ -131,7 +134,7 @@ func (ns *Namespace) ClearAll() {
 	})
 }
 
-// Types ...
+// Types returns a map of type names mapped to their reflection type.
 func (ns *Namespace) Types() map[string]reflect.Type {
 	copied := make(map[string]reflect.Type)
 
@@ -143,18 +146,19 @@ func (ns *Namespace) Types() map[string]reflect.Type {
 	return copied
 }
 
-// HasType ...
+// HasType returns true if the given type name has been registered.
 func (ns *Namespace) HasType(typeName string) bool {
 	_, exists := ns.types.Load(typeName)
 	return exists
 }
 
-// Node ...
+// Node returns the cluster node used for this namespace.
 func (ns *Namespace) Node() *Node {
 	return ns.node
 }
 
-// Close ...
+// Close will close all collections in the namespace,
+// forcing them to sync all data to disk before shutting down.
 func (ns *Namespace) Close() {
 	if !ns.node.node.IsServer() {
 		return
