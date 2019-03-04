@@ -31,7 +31,7 @@ BenchmarkCollectionAll-8      	 1000000	      1822 ns/op	    2144 B/op	       2 
 
 * **Namespace**: Contains multiple collections (e.g. "google")
 * **Collection**: Contains homogeneous data for a data type (e.g. "User")
-* **Key**: The unique string that lets you look up data in a collection
+* **Key**: The string that lets you look up data in a collection
 
 All of the above require a unique name. Given namespace, collection and key, you can access the data stored for it.
 
