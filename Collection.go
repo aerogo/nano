@@ -147,12 +147,14 @@ func (collection *Collection) Set(key string, value interface{}) {
 		// It's important to store the timestamp BEFORE the actual collection.set
 		collection.lastModification.Store(key, time.Now().UnixNano())
 
+		// Serialize the value into JSON format
 		jsonBytes, err := jsoniter.Marshal(value)
 
 		if err != nil {
 			panic(err)
 		}
 
+		// Create a network packet for the "set" command
 		buffer := bytes.Buffer{}
 		buffer.Write(packet.Int64ToBytes(time.Now().UnixNano()))
 		buffer.WriteString(collection.ns.name)
