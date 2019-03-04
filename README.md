@@ -6,7 +6,17 @@
 [![Code coverage][codecov-image]][codecov-url]
 [![License][license-image]][license-url]
 
-High-performance database. Basically network synchronized hashmaps.
+High-performance database. Basically network and disk synchronized hashmaps.
+
+## Features
+
+* Low latency
+* Every command is "local first, sync later"
+* Data is stored in memory
+* Data is synchronized between all nodes in a cluster
+* Data is saved to disk persistently using JSON
+* Timestamp based conflict resolution
+* Uses the extremely fast `sync.Map`
 
 ## Benchmarks
 
