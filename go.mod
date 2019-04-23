@@ -3,8 +3,8 @@ module github.com/aerogo/nano
 go 1.12
 
 require (
-	github.com/aerogo/cluster v0.1.1
-	github.com/aerogo/flow v0.1.0
+	github.com/aerogo/cluster v0.1.2
+	github.com/aerogo/flow v0.1.1
 	github.com/aerogo/packet v0.1.1
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/json-iterator/go v1.1.6
