@@ -36,7 +36,11 @@ func newNamespace(node *Node, name string) *Namespace {
 	}
 
 	// Create directory
-	os.MkdirAll(namespace.root, 0777)
+	err = os.MkdirAll(namespace.root, 0777)
+
+	if err != nil {
+		panic(err)
+	}
 
 	return namespace
 }

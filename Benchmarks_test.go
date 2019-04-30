@@ -22,7 +22,11 @@ func BenchmarkCollectionGet(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			users.Get("1")
+			_, err := users.Get("1")
+
+			if err != nil {
+				b.Fail()
+			}
 		}
 	})
 	b.StopTimer()
@@ -116,7 +120,11 @@ func BenchmarkClusterGet(b *testing.B) {
 		for pb.Next() {
 			atomic.AddInt64(&i, 1)
 			id := int(atomic.LoadInt64(&i))
-			nodes[id%nodeCount].Namespace("test").Get("User", strconv.Itoa(id))
+			_, err := nodes[id%nodeCount].Namespace("test").Get("User", strconv.Itoa(id))
+
+			if err != nil {
+				b.Fail()
+			}
 		}
 	})
 	b.StopTimer()

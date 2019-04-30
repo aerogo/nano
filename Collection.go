@@ -304,6 +304,11 @@ func (collection *Collection) flush() error {
 // writeRecords writes the entire collection to the IO writer.
 func (collection *Collection) writeRecords(writer io.Writer, sorted bool) {
 	records := []keyValue{}
+	stringWriter, ok := writer.(io.StringWriter)
+
+	if !ok {
+		panic("The given io.Writer is not an io.StringWriter")
+	}
 
 	collection.data.Range(func(key, value interface{}) bool {
 		records = append(records, keyValue{
@@ -319,13 +324,12 @@ func (collection *Collection) writeRecords(writer io.Writer, sorted bool) {
 		})
 	}
 
-	newLine := []byte{'\n'}
 	encoder := jsoniter.NewEncoder(writer)
 
 	for _, record := range records {
 		// Key in the first line
-		writer.Write([]byte(record.key))
-		writer.Write(newLine)
+		stringWriter.WriteString(record.key)
+		stringWriter.WriteString("\n")
 
 		// Value in the second line
 		err := encoder.Encode(record.value)

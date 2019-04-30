@@ -41,20 +41,19 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 			}
 
 			collection := namespace.Collection(collectionName)
+			buffer := bytes.Buffer{}
 
-			var b bytes.Buffer
+			buffer.WriteString(namespace.name)
+			buffer.WriteByte('\n')
 
-			b.WriteString(namespace.name)
-			b.WriteByte('\n')
+			buffer.WriteString(collection.name)
+			buffer.WriteByte('\n')
 
-			b.WriteString(collection.name)
-			b.WriteByte('\n')
-
-			writer := bufio.NewWriter(&b)
+			writer := bufio.NewWriter(&buffer)
 			collection.writeRecords(writer, false)
 			writer.Flush()
 
-			client.Outgoing <- packet.New(packetCollectionResponse, b.Bytes())
+			client.Outgoing <- packet.New(packetCollectionResponse, buffer.Bytes())
 
 			if node.verbose {
 				fmt.Println("COLLECTION REQUEST ANSWERED", client.Connection().RemoteAddr())
@@ -142,10 +141,18 @@ func clientNetworkWorker(node *Node) {
 	for msg := range node.networkWorkerQueue {
 		switch msg.Type {
 		case packetSet:
-			networkSet(msg, node)
+			err := networkSet(msg, node)
+
+			if err != nil {
+				fmt.Printf("nano: networkSet failed: %s\n", err.Error())
+			}
 
 		case packetDelete:
-			networkDelete(msg, node)
+			err := networkDelete(msg, node)
+
+			if err != nil {
+				fmt.Printf("nano: networkDelete failed: %s\n", err.Error())
+			}
 		}
 	}
 }
@@ -155,7 +162,12 @@ func networkSet(msg *packet.Packet, db *Node) error {
 	data := bytes.NewBuffer(msg.Data)
 
 	packetTimeBuffer := make([]byte, 8)
-	data.Read(packetTimeBuffer)
+	_, err := data.Read(packetTimeBuffer)
+
+	if err != nil {
+		return err
+	}
+
 	packetTime, err := packet.Int64FromBytes(packetTimeBuffer)
 
 	if err != nil {
@@ -210,7 +222,12 @@ func networkDelete(msg *packet.Packet, db *Node) error {
 	data := bytes.NewBuffer(msg.Data)
 
 	packetTimeBuffer := make([]byte, 8)
-	data.Read(packetTimeBuffer)
+	_, err := data.Read(packetTimeBuffer)
+
+	if err != nil {
+		return err
+	}
+
 	packetTime, err := packet.Int64FromBytes(packetTimeBuffer)
 
 	if err != nil {
