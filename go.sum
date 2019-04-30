@@ -1,7 +1,7 @@
 github.com/aerogo/cluster v0.1.3 h1:Pm+gdmXLtgXtvFdtYY6zVuHw72ax5yf11sLmpINmK4U=
 github.com/aerogo/cluster v0.1.3/go.mod h1:lsMuIQ2gNlA0xUD9PJTGohL4nsbqH5WYS8l5d1XPRN4=
-github.com/aerogo/flow v0.1.1 h1:airfjOX4OlnD3vYV4z0nLLvisMpCqDngG3L8VPpNQEM=
-github.com/aerogo/flow v0.1.1/go.mod h1:keyN5DTTeIzXFwmXPlfafDkx2NL+gZKEQk1sEQYgIZU=
+github.com/aerogo/flow v0.1.2 h1:fZ3V7Bo7jwBjqnM1mWxYbg5O/FlQX2XovzMZU2D+o5M=
+github.com/aerogo/flow v0.1.2/go.mod h1:xXIb7GY0AKouhbp4/ViCsiOmvvgRGonqPG30d6FnACI=
 github.com/aerogo/packet v0.1.3 h1:8SrI9KLYQiGAcDElvWeXAKqnydSIBDw0H5+y4A1fZuM=
 github.com/aerogo/packet v0.1.3/go.mod h1:/t25yF9WG8B5/QB7wTiHLqwCEQ+nAze7uNm/JJNDQbQ=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
