@@ -62,7 +62,11 @@ func newCollection(ns *Namespace, name string) *Collection {
 func (collection *Collection) load() {
 	if collection.node.IsServer() {
 		// Server
-		collection.loadFromDisk()
+		err := collection.loadFromDisk()
+
+		if err != nil {
+			panic(err)
+		}
 
 		// Indicate that collection is loaded
 		close(collection.loaded)
@@ -100,8 +104,9 @@ func (collection *Collection) load() {
 	} else {
 		// Client
 		collection.ns.collectionsLoading.Store(collection.name, collection)
-		data := fmt.Sprintf("%s\n%s\n", collection.ns.name, collection.name)
-		collection.node.Client().Stream.Outgoing <- packet.New(packetCollectionRequest, []byte(data))
+		packetData := bytes.Buffer{}
+		fmt.Fprintf(&packetData, "%s\n%s\n", collection.ns.name, collection.name)
+		collection.node.Client().Stream.Outgoing <- packet.New(packetCollectionRequest, packetData.Bytes())
 		<-collection.loaded
 	}
 }
@@ -258,9 +263,13 @@ func (collection *Collection) flush() error {
 		return err
 	}
 
-	file.Seek(0, io.SeekStart)
 	bufferedWriter := bufio.NewWriter(file)
-	collection.writeRecords(bufferedWriter, true)
+	err = collection.writeRecords(bufferedWriter, true)
+
+	if err != nil {
+		return err
+	}
+
 	err = bufferedWriter.Flush()
 
 	if err != nil {
@@ -302,12 +311,12 @@ func (collection *Collection) flush() error {
 }
 
 // writeRecords writes the entire collection to the IO writer.
-func (collection *Collection) writeRecords(writer io.Writer, sorted bool) {
+func (collection *Collection) writeRecords(writer io.Writer, sorted bool) error {
 	records := []keyValue{}
 	stringWriter, ok := writer.(io.StringWriter)
 
 	if !ok {
-		panic("The given io.Writer is not an io.StringWriter")
+		return errors.New("The given io.Writer is not an io.StringWriter")
 	}
 
 	collection.data.Range(func(key, value interface{}) bool {
@@ -328,36 +337,47 @@ func (collection *Collection) writeRecords(writer io.Writer, sorted bool) {
 
 	for _, record := range records {
 		// Key in the first line
-		stringWriter.WriteString(record.key)
-		stringWriter.WriteString("\n")
-
-		// Value in the second line
-		err := encoder.Encode(record.value)
+		_, err := stringWriter.WriteString(record.key)
 
 		if err != nil {
-			panic(err)
+			return err
+		}
+
+		_, err = stringWriter.WriteString("\n")
+
+		if err != nil {
+			return err
+		}
+
+		// Value in the second line
+		err = encoder.Encode(record.value)
+
+		if err != nil {
+			return err
 		}
 	}
+
+	return nil
 }
 
 // loadFromDisk loads the entire collection from disk.
-func (collection *Collection) loadFromDisk() {
+func (collection *Collection) loadFromDisk() error {
 	filePath := path.Join(collection.ns.root, collection.name+".dat")
 	stream, err := os.OpenFile(filePath, os.O_RDONLY|os.O_SYNC, 0644)
 
 	if os.IsNotExist(err) {
-		return
+		return nil
 	}
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	collection.readRecords(stream)
+	return collection.readRecords(stream)
 }
 
 // readRecords reads the entire collection from an IO reader.
-func (collection *Collection) readRecords(stream io.Reader) {
+func (collection *Collection) readRecords(stream io.Reader) error {
 	var key string
 	var value []byte
 
@@ -366,6 +386,10 @@ func (collection *Collection) readRecords(stream io.Reader) {
 
 	for {
 		line, err := reader.ReadBytes('\n')
+
+		if err != nil {
+			return err
+		}
 
 		// Remove delimiter
 		if len(line) > 0 && line[len(line)-1] == '\n' {
@@ -378,14 +402,15 @@ func (collection *Collection) readRecords(stream io.Reader) {
 			value = line
 			v := reflect.New(collection.typ)
 			obj := v.Interface()
-			jsoniter.Unmarshal(value, &obj)
+			err := jsoniter.Unmarshal(value, &obj)
+
+			if err != nil {
+				return err
+			}
+
 			collection.data.Store(key, obj)
 		}
 
 		count++
-
-		if err != nil {
-			break
-		}
 	}
 }

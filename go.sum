@@ -1,5 +1,5 @@
-github.com/aerogo/cluster v0.1.3 h1:Pm+gdmXLtgXtvFdtYY6zVuHw72ax5yf11sLmpINmK4U=
-github.com/aerogo/cluster v0.1.3/go.mod h1:lsMuIQ2gNlA0xUD9PJTGohL4nsbqH5WYS8l5d1XPRN4=
+github.com/aerogo/cluster v0.1.4 h1:mOTGqSicLyh9s7viVaniov6lCMLs6bTz/nkeJaEul+o=
+github.com/aerogo/cluster v0.1.4/go.mod h1:lsMuIQ2gNlA0xUD9PJTGohL4nsbqH5WYS8l5d1XPRN4=
 github.com/aerogo/flow v0.1.2 h1:fZ3V7Bo7jwBjqnM1mWxYbg5O/FlQX2XovzMZU2D+o5M=
 github.com/aerogo/flow v0.1.2/go.mod h1:xXIb7GY0AKouhbp4/ViCsiOmvvgRGonqPG30d6FnACI=
 github.com/aerogo/packet v0.1.3 h1:8SrI9KLYQiGAcDElvWeXAKqnydSIBDw0H5+y4A1fZuM=

@@ -50,8 +50,19 @@ func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 			buffer.WriteByte('\n')
 
 			writer := bufio.NewWriter(&buffer)
-			collection.writeRecords(writer, false)
-			writer.Flush()
+			err := collection.writeRecords(writer, false)
+
+			if err != nil {
+				fmt.Println("Error answering collection request:", err)
+				continue
+			}
+
+			err = writer.Flush()
+
+			if err != nil {
+				fmt.Println("Error calling writer.Flush() on collection request:", err)
+				continue
+			}
 
 			client.Outgoing <- packet.New(packetCollectionResponse, buffer.Bytes())
 
@@ -99,7 +110,11 @@ func clientReadPacketsFromServer(client *client.Node, node *Node) {
 			}
 
 			collection := namespace.collectionLoading(collectionName)
-			collection.readRecords(data)
+			err := collection.readRecords(data)
+
+			if err != nil {
+				panic(err)
+			}
 
 			namespace.collectionsLoading.Delete(collectionName)
 			close(collection.loaded)
@@ -118,7 +133,11 @@ func clientReadPacketsFromServer(client *client.Node, node *Node) {
 				fmt.Println("[client] Reconnecting", client.Address())
 			}
 
-			client.Connect()
+			err := client.Connect()
+
+			if err != nil {
+				fmt.Println("Error re-connecting to server:", err.Error())
+			}
 
 			if node.verbose {
 				fmt.Println("[client] Reconnect finished!", client.Address())
