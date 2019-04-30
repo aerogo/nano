@@ -1,9 +1,9 @@
 # nano
 
-[![Godoc reference][godoc-image]][godoc-url]
-[![Go report card][goreportcard-image]][goreportcard-url]
-[![Tests][travis-image]][travis-url]
-[![Code coverage][codecov-image]][codecov-url]
+[![Reference][godoc-image]][godoc-url]
+[![Report][report-image]][report-url]
+[![Tests][tests-image]][tests-url]
+[![Coverage][codecov-image]][codecov-url]
 [![License][license-image]][license-url]
 
 High-performance database. Basically network and disk synchronized hashmaps.
@@ -43,11 +43,11 @@ All of the above require a unique name. Given namespace, collection and key, you
 
 [godoc-image]: https://godoc.org/github.com/aerogo/nano?status.svg
 [godoc-url]: https://godoc.org/github.com/aerogo/nano
-[goreportcard-image]: https://goreportcard.com/badge/github.com/aerogo/nano
-[goreportcard-url]: https://goreportcard.com/report/github.com/aerogo/nano
-[travis-image]: https://travis-ci.org/aerogo/nano.svg?branch=master
-[travis-url]: https://travis-ci.org/aerogo/nano
-[codecov-image]: https://codecov.io/gh/aerogo/nano/branch/master/graph/badge.svg
+[report-image]: https://goreportcard.com/badge/github.com/aerogo/nano
+[report-url]: https://goreportcard.com/report/github.com/aerogo/nano
+[tests-image]: https://cloud.drone.io/api/badges/aerogo/nano/status.svg
+[tests-url]: https://cloud.drone.io/aerogo/nano
+[codecov-image]: https://codecov.io/gh/aerogo/nano/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/aerogo/nano
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-url]: https://github.com/aerogo/nano/blob/master/LICENSE
