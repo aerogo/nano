@@ -387,6 +387,10 @@ func (collection *Collection) readRecords(stream io.Reader) error {
 	for {
 		line, err := reader.ReadBytes('\n')
 
+		if err == io.EOF {
+			return nil
+		}
+
 		if err != nil {
 			return err
 		}
@@ -402,7 +406,7 @@ func (collection *Collection) readRecords(stream io.Reader) error {
 			value = line
 			v := reflect.New(collection.typ)
 			obj := v.Interface()
-			err := jsoniter.Unmarshal(value, &obj)
+			err = jsoniter.Unmarshal(value, &obj)
 
 			if err != nil {
 				return err
