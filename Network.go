@@ -200,7 +200,7 @@ func networkSet(msg *packet.Packet, db *Node) error {
 	collectionObj, exists := namespace.collections.Load(collectionName)
 
 	if !exists || collectionObj == nil {
-		return errors.New("Received networkSet command on non-existing collection")
+		return nil //errors.New("Received networkSet command on non-existing collection")
 	}
 
 	collection := collectionObj.(*Collection)
@@ -260,7 +260,7 @@ func networkDelete(msg *packet.Packet, db *Node) error {
 	collectionObj, exists := namespace.collections.Load(collectionName)
 
 	if !exists || collectionObj == nil {
-		return errors.New("Received networkDelete command on non-existing collection")
+		return nil //errors.New("Received networkDelete command on non-existing collection")
 	}
 
 	collection := collectionObj.(*Collection)
