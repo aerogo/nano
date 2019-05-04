@@ -26,6 +26,7 @@ type Node struct {
 	hosts              []string
 	ioSleepTime        time.Duration
 	networkWorkerQueue chan *packet.Packet
+	clientCollections  sync.Map
 	verbose            bool
 }
 
@@ -129,6 +130,7 @@ func (node *Node) connect() {
 	if node.node.IsServer() {
 		node.server = node.node.(*server.Node)
 		node.server.OnConnect(serverOnConnect(node))
+		node.server.OnDisconnect(serverOnDisconnect(node))
 	} else {
 		node.client = node.node.(*client.Node)
 		go clientReadPacketsFromServer(node.client, node)

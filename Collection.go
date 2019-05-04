@@ -172,7 +172,25 @@ func (collection *Collection) Set(key string, value interface{}) {
 		buffer.WriteByte('\n')
 
 		msg := packet.New(packetSet, buffer.Bytes())
-		collection.node.Broadcast(msg)
+
+		if collection.node.IsServer() {
+			filter := func(client *packet.Stream) bool {
+				// Do not send the packet if the collection hasn't been requested
+				obj, ok := collection.node.clientCollections.Load(client)
+
+				if !ok {
+					return false
+				}
+
+				collectionsRequested := obj.(*sync.Map)
+				_, ok = collectionsRequested.Load(collection.ns.name + "." + collection.name)
+				return ok
+			}
+
+			collection.node.server.BroadcastFiltered(msg, filter)
+		} else {
+			collection.node.Broadcast(msg)
+		}
 	}
 
 	collection.set(key, value)
@@ -203,7 +221,25 @@ func (collection *Collection) Delete(key string) bool {
 		buffer.WriteByte('\n')
 
 		msg := packet.New(packetDelete, buffer.Bytes())
-		collection.node.Broadcast(msg)
+
+		if collection.node.IsServer() {
+			filter := func(client *packet.Stream) bool {
+				// Do not send the packet if the collection hasn't been requested
+				obj, ok := collection.node.clientCollections.Load(client)
+
+				if !ok {
+					return false
+				}
+
+				collectionsRequested := obj.(*sync.Map)
+				_, ok = collectionsRequested.Load(collection.ns.name + "." + collection.name)
+				return ok
+			}
+
+			collection.node.server.BroadcastFiltered(msg, filter)
+		} else {
+			collection.node.Broadcast(msg)
+		}
 	}
 
 	_, exists := collection.data.Load(key)
