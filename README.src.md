@@ -6,7 +6,7 @@ High-performance database. Basically network and disk synchronized hashmaps.
 
 ## Benchmarks
 
-```
+```text
 BenchmarkCollectionGet-8      	200000000	         7.16 ns/op	       0 B/op	       0 allocs/op
 BenchmarkCollectionSet-8      	10000000	       117 ns/op	      32 B/op	       2 allocs/op
 BenchmarkCollectionDelete-8   	100000000	        19.6 ns/op	       6 B/op	       0 allocs/op
