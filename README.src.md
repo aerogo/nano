@@ -7,10 +7,10 @@ High-performance database. Basically network and disk synchronized hashmaps.
 ## Benchmarks
 
 ```text
-BenchmarkCollectionGet-8      	200000000	         7.16 ns/op	       0 B/op	       0 allocs/op
-BenchmarkCollectionSet-8      	10000000	       117 ns/op	      32 B/op	       2 allocs/op
-BenchmarkCollectionDelete-8   	100000000	        19.6 ns/op	       6 B/op	       0 allocs/op
-BenchmarkCollectionAll-8      	 1000000	      1822 ns/op	    2144 B/op	       2 allocs/op
+BenchmarkCollectionGet-12               317030264                3.75 ns/op            0 B/op          0 allocs/op
+BenchmarkCollectionSet-12               11678318               102 ns/op              32 B/op          2 allocs/op
+BenchmarkCollectionDelete-12            123748969                9.50 ns/op            5 B/op          0 allocs/op
+BenchmarkCollectionAll-12                1403905               859 ns/op            2144 B/op          2 allocs/op
 ```
 
 ## Features

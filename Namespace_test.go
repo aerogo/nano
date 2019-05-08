@@ -115,6 +115,7 @@ func TestNamespaceAll(t *testing.T) {
 	}
 
 	assert.Equal(t, recordCount, count)
+	assert.NotZero(t, db.Collection("User").Count())
 }
 
 func TestNamespaceClose(t *testing.T) {

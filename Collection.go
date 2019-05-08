@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/aerogo/packet"
@@ -31,6 +32,7 @@ type Collection struct {
 	dirty            chan bool
 	close            chan bool
 	loaded           chan bool
+	count            int64
 	fileMutex        sync.Mutex
 	typ              reflect.Type
 }
@@ -224,6 +226,8 @@ func (collection *Collection) Clear() {
 	if len(collection.dirty) == 0 {
 		collection.dirty <- true
 	}
+
+	atomic.StoreInt64(&collection.count, 0)
 }
 
 // Exists returns whether or not the key exists.
@@ -246,6 +250,14 @@ func (collection *Collection) All() chan interface{} {
 	}()
 
 	return channel
+}
+
+// Count gives you a rough estimate of how many elements are in the collection.
+// It DOES NOT GUARANTEE that the returned number is the actual number of elements.
+// A good use for this function is to preallocate slices with the given capacity.
+// In the future, this function could possibly return the exact number of elements.
+func (collection *Collection) Count() int64 {
+	return atomic.LoadInt64(&collection.count)
 }
 
 // flush writes all data to the file system.
@@ -333,6 +345,7 @@ func (collection *Collection) writeRecords(writer io.Writer, sorted bool) error 
 		})
 	}
 
+	atomic.StoreInt64(&collection.count, int64(len(records)))
 	encoder := jsoniter.NewEncoder(writer)
 
 	for _, record := range records {
@@ -382,7 +395,11 @@ func (collection *Collection) readRecords(stream io.Reader) error {
 	var value []byte
 
 	reader := bufio.NewReader(stream)
-	count := 0
+	lineCount := 0
+
+	defer func() {
+		atomic.StoreInt64(&collection.count, int64(lineCount/2))
+	}()
 
 	for {
 		line, err := reader.ReadBytes('\n')
@@ -400,7 +417,7 @@ func (collection *Collection) readRecords(stream io.Reader) error {
 			line = line[:len(line)-1]
 		}
 
-		if count%2 == 0 {
+		if lineCount%2 == 0 {
 			key = string(line)
 		} else {
 			value = line
@@ -415,6 +432,6 @@ func (collection *Collection) readRecords(stream io.Reader) error {
 			collection.data.Store(key, obj)
 		}
 
-		count++
+		lineCount++
 	}
 }
