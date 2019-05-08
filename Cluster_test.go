@@ -10,8 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const nodeCount = 4
-const parallelRequestCount = 8
+const (
+	nodeCount            = 4
+	parallelRequestCount = 8
+)
 
 func TestClusterClose(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount)
