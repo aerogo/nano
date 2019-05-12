@@ -1,11 +1,7 @@
-github.com/aerogo/cluster v0.1.5 h1:mOYQmaYRsvIi1inaGLICmeJgCYycBxiHnjcTFLtC6kc=
-github.com/aerogo/cluster v0.1.5/go.mod h1:uFZAv2XWV+/clNy0iciCIP2Ygndv8rC8QCX/RCO2R2g=
 github.com/aerogo/cluster v0.1.6 h1:9HYjJwo19uuh9thIc80T3caap9t9b4BXZ1iN8aztjlU=
 github.com/aerogo/cluster v0.1.6/go.mod h1:XzYmY5MqNxASmYQWFMh5iCl4tcm1ekReaCQQXVCpJtY=
 github.com/aerogo/flow v0.1.2 h1:fZ3V7Bo7jwBjqnM1mWxYbg5O/FlQX2XovzMZU2D+o5M=
 github.com/aerogo/flow v0.1.2/go.mod h1:xXIb7GY0AKouhbp4/ViCsiOmvvgRGonqPG30d6FnACI=
-github.com/aerogo/packet v0.1.4 h1:435YxvxMiH1KaBPELU+jCLqj0T9noLBSY4zk53t1gpQ=
-github.com/aerogo/packet v0.1.4/go.mod h1:/t25yF9WG8B5/QB7wTiHLqwCEQ+nAze7uNm/JJNDQbQ=
 github.com/aerogo/packet v0.1.5 h1:+J9VyVGlXnmaynukktwc7d+/nGxX7hBSNSj/7X8tg90=
 github.com/aerogo/packet v0.1.5/go.mod h1:/t25yF9WG8B5/QB7wTiHLqwCEQ+nAze7uNm/JJNDQbQ=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
@@ -21,6 +17,5 @@ github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3Rllmb
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
-github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
