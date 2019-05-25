@@ -2,6 +2,8 @@ package nano_test
 
 import (
 	"strconv"
+
+	"github.com/aerogo/nano"
 )
 
 type User struct {
@@ -35,3 +37,5 @@ const port = 3000
 var types = []interface{}{
 	(*User)(nil),
 }
+
+var config = nano.Configuration{Port: port}

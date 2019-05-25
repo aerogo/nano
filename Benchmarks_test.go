@@ -10,7 +10,7 @@ import (
 )
 
 func BenchmarkCollectionGet(b *testing.B) {
-	node := nano.New(port)
+	node := nano.New(config)
 	db := node.Namespace("test").RegisterTypes(types...)
 	defer node.Close()
 	defer node.Clear()
@@ -33,7 +33,7 @@ func BenchmarkCollectionGet(b *testing.B) {
 }
 
 func BenchmarkCollectionSet(b *testing.B) {
-	node := nano.New(port)
+	node := nano.New(config)
 	db := node.Namespace("test").RegisterTypes(types...)
 	defer node.Close()
 	defer node.Clear()
@@ -52,7 +52,7 @@ func BenchmarkCollectionSet(b *testing.B) {
 }
 
 func BenchmarkCollectionDelete(b *testing.B) {
-	node := nano.New(port)
+	node := nano.New(config)
 	db := node.Namespace("test").RegisterTypes(types...)
 	defer node.Close()
 	defer node.Clear()
@@ -74,7 +74,7 @@ func BenchmarkCollectionDelete(b *testing.B) {
 }
 
 func BenchmarkCollectionAll(b *testing.B) {
-	node := nano.New(port)
+	node := nano.New(config)
 	db := node.Namespace("test").RegisterTypes(types...)
 	defer node.Close()
 	defer node.Clear()
@@ -102,7 +102,7 @@ func BenchmarkClusterGet(b *testing.B) {
 	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New(port)
+		nodes[i] = nano.New(config)
 		nodes[i].Namespace("test").RegisterTypes(types...)
 	}
 
@@ -141,7 +141,7 @@ func BenchmarkClusterSet(b *testing.B) {
 	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New(port)
+		nodes[i] = nano.New(config)
 		nodes[i].Namespace("test").RegisterTypes(types...)
 	}
 
@@ -176,7 +176,7 @@ func BenchmarkClusterDelete(b *testing.B) {
 	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New(port)
+		nodes[i] = nano.New(config)
 		nodes[i].Namespace("test").RegisterTypes(types...)
 	}
 

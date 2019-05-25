@@ -10,7 +10,7 @@ import (
 )
 
 func TestNamespaceGet(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	defer node.Close()
 	defer node.Clear()
 
@@ -31,7 +31,7 @@ func TestNamespaceGet(t *testing.T) {
 }
 
 func TestNamespaceGetMany(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	defer node.Close()
 	defer node.Clear()
 
@@ -56,7 +56,7 @@ func TestNamespaceGetMany(t *testing.T) {
 }
 
 func TestNamespaceSet(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	defer node.Close()
 	defer node.Clear()
 
@@ -71,7 +71,7 @@ func TestNamespaceSet(t *testing.T) {
 }
 
 func TestNamespaceClear(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	defer node.Close()
 	defer node.Clear()
 
@@ -94,7 +94,7 @@ func TestNamespaceClear(t *testing.T) {
 }
 
 func TestNamespaceAll(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	db := node.Namespace("test").RegisterTypes(types...)
 	assert.True(t, node.IsServer())
 	defer node.Close()
@@ -119,7 +119,7 @@ func TestNamespaceAll(t *testing.T) {
 }
 
 func TestNamespaceClose(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 
 	assert.True(t, node.IsServer())
 	assert.False(t, node.IsClosed())
@@ -130,7 +130,7 @@ func TestNamespaceClose(t *testing.T) {
 }
 
 func TestNamespaceTypes(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	defer node.Close()
 
 	db := node.Namespace("test").RegisterTypes(types...)
@@ -138,7 +138,7 @@ func TestNamespaceTypes(t *testing.T) {
 }
 
 func TestNamespacePrefetch(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	defer node.Close()
 
 	db := node.Namespace("test").RegisterTypes(types...)
@@ -146,7 +146,7 @@ func TestNamespacePrefetch(t *testing.T) {
 }
 
 func TestNamespaceNode(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	defer node.Close()
 
 	db := node.Namespace("test").RegisterTypes(types...)
@@ -155,7 +155,7 @@ func TestNamespaceNode(t *testing.T) {
 
 // func TestNamespaceColdStart(t *testing.T) {
 // 	time.Sleep(500 * time.Millisecond)
-// 	db := nano.New(port).Namespace("test").RegisterTypes(types...)
+// 	db := nano.New(config).Namespace("test").RegisterTypes(types...)
 // 	assert.True(t, node.IsServer())
 
 // 	for i := 0; i < 10000; i++ {
@@ -172,7 +172,7 @@ func TestNamespaceNode(t *testing.T) {
 // 	time.Sleep(2000 * time.Millisecond)
 
 // 	// Cold start
-// 	newDB := nano.New(port).Namespace("test").RegisterTypes(types...)
+// 	newDB := nano.New(config).Namespace("test").RegisterTypes(types...)
 // 	assert.True(t, newnode.IsServer())
 
 // 	defer newDB.Close()

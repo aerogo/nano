@@ -24,16 +24,14 @@ type Node struct {
 	node               cluster.Node
 	server             *server.Node
 	client             *client.Node
-	port               int
-	hosts              []string
-	directory          string
+	config             Configuration
 	ioSleepTime        time.Duration
 	networkWorkerQueue chan *packet.Packet
 	verbose            bool
 }
 
-// New ...
-func New(port int, hosts ...string) *Node {
+// New starts up a new database node.
+func New(config Configuration) *Node {
 	// Get user info to access the home directory
 	user, err := user.Current()
 
@@ -43,11 +41,13 @@ func New(port int, hosts ...string) *Node {
 
 	// Create Node
 	node := &Node{
-		port:               port,
-		hosts:              hosts,
-		directory:          path.Join(user.HomeDir, ".aero", "db"),
+		config:             config,
 		ioSleepTime:        1 * time.Millisecond,
 		networkWorkerQueue: make(chan *packet.Packet, 8192),
+	}
+
+	if node.config.Directory == "" {
+		node.config.Directory = path.Join(user.HomeDir, ".aero", "db")
 	}
 
 	node.connect()
@@ -103,11 +103,6 @@ func (node *Node) Address() net.Addr {
 	return node.node.Address()
 }
 
-// SetDirectory sets the directory to load namespaces from.
-func (node *Node) SetDirectory(newDirectory string) {
-	node.directory = newDirectory
-}
-
 // Clear deletes all data in the Node.
 func (node *Node) Clear() {
 	node.namespaces.Range(func(key, value interface{}) bool {
@@ -140,7 +135,7 @@ func (node *Node) Close() {
 
 // connect ...
 func (node *Node) connect() {
-	node.node = cluster.New(node.port, node.hosts...)
+	node.node = cluster.New(node.config.Port, node.config.Hosts...)
 
 	if node.node.IsServer() {
 		node.server = node.node.(*server.Node)

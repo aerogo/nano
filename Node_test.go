@@ -9,7 +9,7 @@ import (
 )
 
 func TestNodeAddress(t *testing.T) {
-	node := nano.New(port)
+	node := nano.New(config)
 	defer node.Close()
 	assert.NotEmpty(t, node.Address().String())
 }

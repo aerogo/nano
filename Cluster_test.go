@@ -19,7 +19,7 @@ func TestClusterClose(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New(port)
+		nodes[i] = nano.New(config)
 
 		if i == 0 {
 			assert.True(t, nodes[0].IsServer())
@@ -45,7 +45,7 @@ func TestClusterReconnect(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New(port)
+		nodes[i] = nano.New(config)
 		nodes[i].Namespace("test").RegisterTypes(types...)
 
 		if i == 0 {
@@ -71,7 +71,7 @@ func TestClusterReconnect(t *testing.T) {
 	time.Sleep(1500 * time.Millisecond)
 
 	// Restart server
-	nodes[0] = nano.New(port)
+	nodes[0] = nano.New(config)
 	nodes[0].Namespace("test").RegisterTypes(types...)
 	assert.True(t, nodes[0].IsServer())
 
@@ -108,7 +108,7 @@ func TestClusterDataSharing(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New(port)
+		nodes[i] = nano.New(config)
 		nodes[i].Namespace("test").RegisterTypes(types...)
 
 		if i == 0 {
@@ -144,7 +144,7 @@ func TestClusterSet(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New(port)
+		nodes[i] = nano.New(config)
 		nodes[i].Namespace("test").RegisterTypes(types...)
 
 		if i == 0 {
@@ -190,7 +190,7 @@ func TestClusterDelete(t *testing.T) {
 	nodes := make([]*nano.Node, nodeCount)
 
 	for i := 0; i < nodeCount; i++ {
-		nodes[i] = nano.New(port)
+		nodes[i] = nano.New(config)
 		nodes[i].Namespace("test").RegisterTypes(types...)
 
 		if i == 0 {

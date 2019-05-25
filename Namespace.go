@@ -24,7 +24,7 @@ func newNamespace(node *Node, name string) *Namespace {
 	namespace := &Namespace{
 		node: node,
 		name: name,
-		root: path.Join(node.directory, name),
+		root: path.Join(node.config.Directory, name),
 	}
 
 	// Create directory
