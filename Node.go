@@ -3,6 +3,8 @@ package nano
 import (
 	"fmt"
 	"net"
+	"os/user"
+	"path"
 	"runtime"
 	"sync"
 	"time"
@@ -24,6 +26,7 @@ type Node struct {
 	client             *client.Node
 	port               int
 	hosts              []string
+	directory          string
 	ioSleepTime        time.Duration
 	networkWorkerQueue chan *packet.Packet
 	verbose            bool
@@ -31,10 +34,18 @@ type Node struct {
 
 // New ...
 func New(port int, hosts ...string) *Node {
+	// Get user info to access the home directory
+	user, err := user.Current()
+
+	if err != nil {
+		panic(err)
+	}
+
 	// Create Node
 	node := &Node{
 		port:               port,
 		hosts:              hosts,
+		directory:          path.Join(user.HomeDir, ".aero", "db"),
 		ioSleepTime:        1 * time.Millisecond,
 		networkWorkerQueue: make(chan *packet.Packet, 8192),
 	}
@@ -92,6 +103,11 @@ func (node *Node) Address() net.Addr {
 	return node.node.Address()
 }
 
+// SetDirectory sets the directory to load namespaces from.
+func (node *Node) SetDirectory(newDirectory string) {
+	node.directory = newDirectory
+}
+
 // Clear deletes all data in the Node.
 func (node *Node) Clear() {
 	node.namespaces.Range(func(key, value interface{}) bool {
@@ -101,7 +117,7 @@ func (node *Node) Clear() {
 	})
 }
 
-// Close ...
+// Close frees up resources used by the node.
 func (node *Node) Close() {
 	if node.IsServer() {
 		if node.verbose {

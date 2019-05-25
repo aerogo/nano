@@ -2,7 +2,6 @@ package nano
 
 import (
 	"os"
-	"os/user"
 	"path"
 	"reflect"
 	"sync"
@@ -21,22 +20,15 @@ type Namespace struct {
 
 // newNamespace is the internal function used to create a new namespace.
 func newNamespace(node *Node, name string) *Namespace {
-	// Get user info to access the home directory
-	user, err := user.Current()
-
-	if err != nil {
-		panic(err)
-	}
-
 	// Create namespace
 	namespace := &Namespace{
 		node: node,
 		name: name,
-		root: path.Join(user.HomeDir, ".aero", "db", name),
+		root: path.Join(node.directory, name),
 	}
 
 	// Create directory
-	err = os.MkdirAll(namespace.root, 0777)
+	err := os.MkdirAll(namespace.root, 0777)
 
 	if err != nil {
 		panic(err)

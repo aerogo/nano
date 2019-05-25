@@ -63,7 +63,7 @@ func newCollection(ns *Namespace, name string) *Collection {
 // load loads all collection data
 func (collection *Collection) load() {
 	if collection.node.IsServer() {
-		// Server
+		// Server loads the collection from disk
 		err := collection.loadFromDisk()
 
 		if err != nil {
@@ -104,7 +104,7 @@ func (collection *Collection) load() {
 			}
 		}()
 	} else {
-		// Client
+		// Client asks the server to send the most recent collection data
 		collection.ns.collectionsLoading.Store(collection.name, collection)
 		packetData := bytes.Buffer{}
 		fmt.Fprintf(&packetData, "%s\n%s\n", collection.ns.name, collection.name)
