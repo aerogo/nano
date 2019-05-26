@@ -42,7 +42,7 @@ func New(config Configuration) *Node {
 	// Create Node
 	node := &Node{
 		config:             config,
-		ioSleepTime:        1 * time.Millisecond,
+		ioSleepTime:        100 * time.Millisecond,
 		networkWorkerQueue: make(chan *packet.Packet, 8192),
 	}
 
