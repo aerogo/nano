@@ -5,9 +5,8 @@ import (
 	"time"
 
 	"github.com/aerogo/flow"
-
 	"github.com/aerogo/nano"
-	"github.com/stretchr/testify/assert"
+	"github.com/akyoto/assert"
 )
 
 const (
@@ -81,19 +80,18 @@ func TestClusterReconnect(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 
 		if time.Since(start) > 2*time.Second {
-			assert.Fail(t, "Not enough clients reconnected")
-			return
+			panic("Not enough clients reconnected")
 		}
 	}
 
 	for i := 0; i < nodeCount; i++ {
 		obj, err := nodes[i].Namespace("test").Get("User", "1")
-		assert.NoError(t, err)
+		assert.Nil(t, err)
 		assert.NotNil(t, obj)
 		assert.Equal(t, "1", obj.(*User).ID)
 
 		obj, err = nodes[i].Namespace("test").Get("User", "2")
-		assert.NoError(t, err)
+		assert.Nil(t, err)
 		assert.NotNil(t, obj)
 		assert.Equal(t, "2", obj.(*User).ID)
 	}
@@ -128,7 +126,7 @@ func TestClusterDataSharing(t *testing.T) {
 	for i := 1; i < nodeCount; i++ {
 		flow.ParallelRepeat(parallelRequestCount, func() {
 			user, err := nodes[i].Namespace("test").Get("User", "100")
-			assert.NoError(t, err)
+			assert.Nil(t, err)
 			assert.NotNil(t, user)
 		})
 	}
@@ -175,8 +173,8 @@ func TestClusterSet(t *testing.T) {
 	// Confirm that all nodes have the record now
 	for i := 0; i < nodeCount; i++ {
 		user, err := nodes[i].Namespace("test").Get("User", "42")
-		assert.NoError(t, err, "nodes[%d]", i)
-		assert.NotNil(t, user, "nodes[%d]", i)
+		assert.Nil(t, err)
+		assert.NotNil(t, user)
 	}
 
 	for i := nodeCount - 1; i >= 0; i-- {
@@ -214,8 +212,8 @@ func TestClusterDelete(t *testing.T) {
 	// Confirm that all nodes have the record now
 	for i := 0; i < nodeCount; i++ {
 		user, err := nodes[i].Namespace("test").Get("User", "42")
-		assert.NoError(t, err, "nodes[%d]", i)
-		assert.NotNil(t, user, "nodes[%d]", i)
+		assert.Nil(t, err)
+		assert.NotNil(t, user)
 	}
 
 	// Delete on all nodes
@@ -229,7 +227,7 @@ func TestClusterDelete(t *testing.T) {
 	// Confirm that all nodes deleted the record now
 	for i := 0; i < nodeCount; i++ {
 		exists := nodes[i].Namespace("test").Exists("User", "42")
-		assert.False(t, exists, "nodes[%d]", i)
+		assert.False(t, exists)
 	}
 
 	for i := nodeCount - 1; i >= 0; i-- {

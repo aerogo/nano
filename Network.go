@@ -18,13 +18,6 @@ import (
 func serverReadPacketsFromClient(client *packet.Stream, node *Node) {
 	for msg := range client.Incoming {
 		switch msg.Type {
-		// case packetPing:
-		// 	fmt.Println("client", string(msg.Data))
-		// 	client.Outgoing <- packet.New(packetPong, []byte("pong"))
-
-		// case packetPong:
-		// 	fmt.Println("client", string(msg.Data))
-
 		case packetCollectionRequest:
 			data := bytes.NewBuffer(msg.Data)
 

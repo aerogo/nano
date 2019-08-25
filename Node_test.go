@@ -3,13 +3,12 @@ package nano_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/aerogo/nano"
+	"github.com/akyoto/assert"
 )
 
 func TestNodeAddress(t *testing.T) {
 	node := nano.New(config)
 	defer node.Close()
-	assert.NotEmpty(t, node.Address().String())
+	assert.True(t, node.Address().String() != "")
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/aerogo/nano"
-	"github.com/stretchr/testify/assert"
+	"github.com/akyoto/assert"
 )
 
 func TestNamespaceGet(t *testing.T) {
@@ -21,7 +21,7 @@ func TestNamespaceGet(t *testing.T) {
 	db.Set("User", "2", newUser(2))
 
 	val, err := db.Get("User", "1")
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 
 	user, ok := val.(*User)
 	assert.True(t, ok)
@@ -46,7 +46,7 @@ func TestNamespaceGetMany(t *testing.T) {
 		"2",
 	})
 
-	assert.Len(t, objects, 2)
+	assert.Equal(t, len(objects), 2)
 
 	for _, object := range objects {
 		user, ok := object.(*User)
@@ -115,7 +115,7 @@ func TestNamespaceAll(t *testing.T) {
 	}
 
 	assert.Equal(t, recordCount, count)
-	assert.NotZero(t, db.Collection("User").Count())
+	assert.True(t, db.Collection("User").Count() >= 0)
 }
 
 func TestNamespaceClose(t *testing.T) {
