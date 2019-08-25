@@ -17,6 +17,7 @@ type User struct {
 }
 
 func newUser(id int) *User {
+	//nolint:misspell
 	return &User{
 		ID:        strconv.Itoa(id),
 		Name:      "Test User",
