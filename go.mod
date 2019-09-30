@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/aerogo/cluster v0.1.8
 	github.com/aerogo/flow v0.1.5
-	github.com/aerogo/packet v0.2.0
+	github.com/aerogo/packet v0.2.2
 	github.com/akyoto/assert v0.2.0
 	github.com/json-iterator/go v1.1.7
 	github.com/kr/pretty v0.1.0 // indirect
