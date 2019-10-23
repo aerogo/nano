@@ -1,7 +1,8 @@
 kind: pipeline
 name: default
 
-branches:
+trigger:
+  branch:
   - master
 
 steps:
