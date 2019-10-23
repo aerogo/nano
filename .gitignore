@@ -5,3 +5,5 @@
 *.test
 *.out
 *.dat
+
+example/example
