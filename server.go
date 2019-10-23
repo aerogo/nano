@@ -3,16 +3,12 @@ package nano
 import (
 	"fmt"
 	"net"
+
+	"github.com/aerogo/nano/packet"
 )
 
 type server struct {
 	listener *net.UDPConn
-	clients  map[string]*clientOnServer
-}
-
-type clientOnServer struct {
-	buffer  []byte
-	address *net.UDPAddr
 }
 
 func (server *server) Address() net.Addr {
@@ -24,26 +20,30 @@ func (server *server) Close() {
 }
 
 func (server *server) Main() {
-	server.clients = map[string]*clientOnServer{}
 	buffer := make([]byte, 4096)
 
 	for {
 		n, address, err := server.listener.ReadFromUDP(buffer)
-		client := server.clients[address.String()]
+		fmt.Printf("[server] %s sent %d bytes\n", address, n)
 
-		if client == nil {
-			client = &clientOnServer{
-				address: address,
-			}
-
-			server.clients[address.String()] = client
-		}
-
-		client.buffer = append(client.buffer, buffer[:n]...)
-		fmt.Printf("[server] %s buffer contains %d bytes (+%d)\n", client.address, len(client.buffer), n)
+		p := packet.Packet(buffer[:n])
+		server.OnPacket(address, p)
 
 		if err != nil {
-			fmt.Printf("[server] Error reading client packet: %v\n", err)
+			fmt.Printf("[server] Error reading from UDP: %v\n", err)
+		}
+	}
+}
+
+func (server *server) OnPacket(address *net.UDPAddr, p packet.Packet) {
+	fmt.Printf("[server] %s message of type %d: %s\n", address, p.Type(), p.Data())
+
+	switch p.Type() {
+	case 0:
+		_, err := server.listener.WriteToUDP(packet.New(0, []byte("pong")), address)
+
+		if err != nil {
+			fmt.Printf("[server] Error writing to %s: %v\n", address, err)
 		}
 	}
 }
