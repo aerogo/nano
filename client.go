@@ -25,19 +25,19 @@ func (client *client) Main() {
 
 	for {
 		n, address, err := client.connection.ReadFromUDP(buffer)
-		fmt.Printf("[client] %s sent %d bytes\n", address, n)
+		fmt.Printf("[%v] %s sent %d bytes\n", client.connection.LocalAddr(), address, n)
 
 		p := packet.Packet(buffer[:n])
 		client.OnPacket(address, p)
 
 		if err != nil {
-			fmt.Printf("[client] Error reading from UDP: %v\n", err)
+			fmt.Printf("[%v] Error reading from UDP: %v\n", client.connection.LocalAddr(), err)
 		}
 	}
 }
 
 func (client *client) OnPacket(address *net.UDPAddr, p packet.Packet) {
-	fmt.Printf("[client] %s message of type %d: %s\n", address, p.Type(), p.Data())
+	fmt.Printf("[%v] Received message from %v of type %d: %s\n", client.connection.LocalAddr(), address, p.Type(), p.Data())
 
 	switch p.Type() {
 	case 0:
