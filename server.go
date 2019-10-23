@@ -20,6 +20,7 @@ func (server *server) Close() {
 }
 
 func (server *server) Main() {
+	defer server.Close()
 	buffer := make([]byte, 4096)
 
 	for {

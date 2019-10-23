@@ -9,17 +9,24 @@ import (
 
 type client struct {
 	connection *net.UDPConn
+	outgoing   chan packet.Packet
+}
+
+func (client *client) Address() net.Addr {
+	return client.connection.LocalAddr()
+}
+
+func (client *client) Close() {
+	client.connection.Close()
+	close(client.outgoing)
 }
 
 func (client *client) Main() {
+	client.outgoing = make(chan packet.Packet)
+	defer client.Close()
 	fmt.Printf("[%v] Successfully connected to server %v\n", client.connection.LocalAddr(), client.connection.RemoteAddr())
-	defer client.connection.Close()
-
-	_, err := client.connection.Write(packet.New(0, []byte("ping")))
-
-	if err != nil {
-		fmt.Printf("[%v] Error sending message to server: %v\n", client.connection.LocalAddr(), err)
-	}
+	go client.Writer()
+	client.outgoing <- packet.New(0, []byte("ping"))
 
 	buffer := make([]byte, 4096)
 
@@ -32,6 +39,16 @@ func (client *client) Main() {
 
 		if err != nil {
 			fmt.Printf("[%v] Error reading from UDP: %v\n", client.connection.LocalAddr(), err)
+		}
+	}
+}
+
+func (client *client) Writer() {
+	for packet := range client.outgoing {
+		_, err := client.connection.Write(packet)
+
+		if err != nil {
+			fmt.Printf("[%v] Error sending message to server: %v\n", client.connection.LocalAddr(), err)
 		}
 	}
 }

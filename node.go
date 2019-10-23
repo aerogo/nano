@@ -14,3 +14,19 @@ type node struct {
 	server
 	client
 }
+
+func (node *node) Address() net.Addr {
+	if node.listener != nil {
+		return node.server.Address()
+	} else {
+		return node.client.Address()
+	}
+}
+
+func (node *node) Close() {
+	if node.listener != nil {
+		node.server.Close()
+	} else {
+		node.client.Close()
+	}
+}
