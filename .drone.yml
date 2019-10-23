@@ -1,6 +1,9 @@
 kind: pipeline
 name: default
 
+branches:
+  - master
+
 steps:
 - name: test
   image: golang
