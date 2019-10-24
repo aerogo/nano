@@ -1,2 +1,6 @@
 github.com/akyoto/assert v0.2.0 h1:lR7OHrbbBNNZFmRVS8I5MzS0ShLH36ZQVZVyg1bvs6A=
 github.com/akyoto/assert v0.2.0/go.mod h1:g5e6ag+ksCEQENq/LnmU9z04wCAIFDr8KacBusVL0H8=
+github.com/akyoto/cache v1.0.4 h1:lbW0X9hYBq7aEc2LJU9Ry80T4kvRAQGFhDAJSvmMv/Y=
+github.com/akyoto/cache v1.0.4/go.mod h1:WfxTRqKhfgAG71Xh6E3WLpjhBtZI37O53G4h5s+3iM4=
+github.com/akyoto/cache v1.0.5 h1:DaZo1JUBZ5ivHHS4RWZRN9qfyqVJiL8KZWRy3UCogX0=
+github.com/akyoto/cache v1.0.5/go.mod h1:WfxTRqKhfgAG71Xh6E3WLpjhBtZI37O53G4h5s+3iM4=

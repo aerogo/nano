@@ -1,6 +1,9 @@
 package nano
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 // Node is a general-purpose node in the cluster.
 // It can act either as a server or as a client.
@@ -13,6 +16,35 @@ type Node interface {
 type node struct {
 	server
 	client
+	config Configuration
+}
+
+// connect initializes the node as a server or client.
+func (node *node) connect() error {
+	address := fmt.Sprintf(":%d", node.config.Port)
+	udpAddress, err := net.ResolveUDPAddr("udp", address)
+
+	if err != nil {
+		return err
+	}
+
+	listener, err := net.ListenUDP("udp", udpAddress)
+
+	if err != nil {
+		connection, err := net.DialUDP("udp", nil, udpAddress)
+
+		if err != nil {
+			return err
+		}
+
+		node.client.connection = connection
+		go node.client.Main()
+		return nil
+	}
+
+	node.server.listener = listener
+	go node.server.Main()
+	return nil
 }
 
 func (node *node) Address() net.Addr {

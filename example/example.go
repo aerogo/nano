@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	nodeCount = 2
+	nodeCount = 3
 )
 
 func main() {

@@ -3,12 +3,20 @@ package nano
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/aerogo/nano/packet"
+	"github.com/akyoto/cache"
+)
+
+const (
+	keepAliveTime      = 30 * time.Second
+	keepAliveCleanTime = 1 * time.Minute
 )
 
 type server struct {
 	listener *net.UDPConn
+	clients  *cache.Cache
 }
 
 func (server *server) Address() net.Addr {
@@ -20,15 +28,17 @@ func (server *server) Close() {
 }
 
 func (server *server) Main() {
+	server.clients = cache.New(keepAliveCleanTime)
 	defer server.Close()
 	buffer := make([]byte, 4096)
+	fmt.Println("[server] Ready to receive messages")
 
 	for {
 		n, address, err := server.listener.ReadFromUDP(buffer)
 		fmt.Printf("[server] %s sent %d bytes\n", address, n)
 
 		p := packet.Packet(buffer[:n])
-		server.OnPacket(address, p)
+		server.Receive(address, p)
 
 		if err != nil {
 			fmt.Printf("[server] Error reading from UDP: %v\n", err)
@@ -36,15 +46,37 @@ func (server *server) Main() {
 	}
 }
 
-func (server *server) OnPacket(address *net.UDPAddr, p packet.Packet) {
-	fmt.Printf("[server] %s message of type %d: %s\n", address, p.Type(), p.Data())
+// Sends sends the packet to the given address.
+func (server *server) Send(address *net.UDPAddr, p packet.Packet) {
+	_, err := server.listener.WriteToUDP(p, address)
 
-	switch p.Type() {
-	case 0:
-		_, err := server.listener.WriteToUDP(packet.New(0, []byte("pong")), address)
+	if err != nil {
+		fmt.Printf("[server] Error writing to %s: %v\n", address, err)
+	}
+}
 
-		if err != nil {
-			fmt.Printf("[server] Error writing to %s: %v\n", address, err)
-		}
+// Broadcast sends a packet to all clients.
+func (server *server) Broadcast(p packet.Packet) error {
+	var err error
+
+	server.clients.Range(func(key interface{}, value interface{}) bool {
+		address := value.(*net.UDPAddr)
+		_, err = server.listener.WriteToUDP(p, address)
+		return err == nil
+	})
+
+	return err
+}
+
+// Receive handles received packets.
+func (server *server) Receive(address *net.UDPAddr, msg packet.Packet) {
+	fmt.Printf("[server] %s message of type %d: %s\n", address, msg.Type(), msg.Data())
+
+	// Refresh keep-alive timer
+	server.clients.Set(address.String(), address, keepAliveTime)
+
+	switch msg.Type() {
+	case packetAlive:
+		server.Send(address, packet.New(packetAlive, nil))
 	}
 }

@@ -9,7 +9,6 @@ import (
 
 type client struct {
 	connection *net.UDPConn
-	outgoing   chan packet.Packet
 }
 
 func (client *client) Address() net.Addr {
@@ -18,15 +17,15 @@ func (client *client) Address() net.Addr {
 
 func (client *client) Close() {
 	client.connection.Close()
-	close(client.outgoing)
 }
 
 func (client *client) Main() {
-	client.outgoing = make(chan packet.Packet)
 	defer client.Close()
 	fmt.Printf("[%v] Successfully connected to server %v\n", client.connection.LocalAddr(), client.connection.RemoteAddr())
-	go client.Writer()
-	client.outgoing <- packet.New(0, []byte("ping"))
+
+	// for i := 0; i < 5; i++ {
+	// 	client.Send(packet.New(packetAlive, nil))
+	// }
 
 	buffer := make([]byte, 4096)
 
@@ -35,7 +34,7 @@ func (client *client) Main() {
 		fmt.Printf("[%v] %s sent %d bytes\n", client.connection.LocalAddr(), address, n)
 
 		p := packet.Packet(buffer[:n])
-		client.OnPacket(address, p)
+		client.Receive(address, p)
 
 		if err != nil {
 			fmt.Printf("[%v] Error reading from UDP: %v\n", client.connection.LocalAddr(), err)
@@ -43,21 +42,19 @@ func (client *client) Main() {
 	}
 }
 
-func (client *client) Writer() {
-	for packet := range client.outgoing {
-		_, err := client.connection.Write(packet)
+func (client *client) Send(p packet.Packet) {
+	_, err := client.connection.Write(p)
 
-		if err != nil {
-			fmt.Printf("[%v] Error sending message to server: %v\n", client.connection.LocalAddr(), err)
-		}
+	if err != nil {
+		fmt.Printf("[%v] Error sending message to server: %v\n", client.connection.LocalAddr(), err)
 	}
 }
 
-func (client *client) OnPacket(address *net.UDPAddr, p packet.Packet) {
+func (client *client) Receive(address *net.UDPAddr, p packet.Packet) {
 	fmt.Printf("[%v] Received message from %v of type %d: %s\n", client.connection.LocalAddr(), address, p.Type(), p.Data())
 
 	switch p.Type() {
-	case 0:
+	case packetAlive:
 		fmt.Println(string(p.Data()))
 	}
 }
