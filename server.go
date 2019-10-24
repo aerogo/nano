@@ -14,7 +14,7 @@ const (
 	keepAliveSendInterval = 5 * time.Second
 	keepAliveTimeout      = 2 * keepAliveSendInterval
 	keepAliveCleanTime    = 1 * time.Minute
-	readTimeout           = 10 * time.Second
+	readTimeout           = 5 * time.Minute
 )
 
 type server struct {
@@ -43,6 +43,7 @@ func (server *server) init(listener *net.UDPConn) {
 
 func (server *server) Main() {
 	defer fmt.Println("server.Main shutdown")
+	defer close(server.incoming)
 
 	buffer := make([]byte, 4096)
 	fmt.Println("[server] Ready")

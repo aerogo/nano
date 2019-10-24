@@ -39,6 +39,7 @@ func (client *client) init(connection *net.UDPConn) {
 
 func (client *client) Main() {
 	defer fmt.Println("client.Main shutdown")
+	defer close(client.incoming)
 
 	fmt.Printf("[%v] Successfully connected to server %v\n", client.connection.LocalAddr(), client.connection.RemoteAddr())
 	buffer := make([]byte, 4096)
