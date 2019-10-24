@@ -9,6 +9,10 @@ import (
 	"github.com/aerogo/nano/packet"
 )
 
+const (
+	readTimeout = 5 * time.Minute
+)
+
 // Node is a general-purpose node in the cluster.
 // It can act either as a server or as a client.
 type Node interface {
