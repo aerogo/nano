@@ -45,7 +45,13 @@ func (client *client) Main() {
 	buffer := make([]byte, 4096)
 
 	for {
-		client.connection.SetReadDeadline(time.Now().Add(readTimeout))
+		err := client.connection.SetReadDeadline(time.Now().Add(readTimeout))
+
+		if err != nil {
+			fmt.Printf("[%v] Error setting read deadline: %v\n", client.connection.LocalAddr(), err)
+			return
+		}
+
 		n, address, err := client.connection.ReadFromUDP(buffer)
 
 		if n > 0 {
@@ -66,7 +72,7 @@ func (client *client) Main() {
 		// Go doesn't have a proper type for close errors,
 		// so we need to do a string check which is not optimal.
 		if !strings.Contains(err.Error(), "use of closed network connection") {
-			fmt.Printf("[server] Error reading from UDP: %v\n", err)
+			fmt.Printf("[%v] Error reading from UDP: %v\n", client.connection.LocalAddr(), err)
 		}
 
 		return

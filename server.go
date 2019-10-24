@@ -49,7 +49,13 @@ func (server *server) Main() {
 	fmt.Println("[server] Ready")
 
 	for {
-		server.listener.SetReadDeadline(time.Now().Add(readTimeout))
+		err := server.listener.SetReadDeadline(time.Now().Add(readTimeout))
+
+		if err != nil {
+			fmt.Printf("[server] Error setting read deadline: %v\n", err)
+			return
+		}
+
 		n, address, err := server.listener.ReadFromUDP(buffer)
 
 		if n > 0 {

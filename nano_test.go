@@ -31,3 +31,14 @@ func TestGoroutineLeak(t *testing.T) {
 	leakedGoroutines := runtime.NumGoroutine() - numGoroutines
 	assert.Equal(t, leakedGoroutines, 0)
 }
+
+func TestNodeAddress(t *testing.T) {
+	for i := range nodes {
+		nodes[i] = nano.New(config)
+		assert.NotNil(t, nodes[i].Address())
+	}
+
+	for _, node := range nodes {
+		node.Close()
+	}
+}

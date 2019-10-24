@@ -45,6 +45,7 @@ func (node *node) connect() error {
 	return nil
 }
 
+// Address returns the address of the node.
 func (node *node) Address() net.Addr {
 	if node.IsServer() {
 		return node.server.Address()
@@ -53,6 +54,7 @@ func (node *node) Address() net.Addr {
 	}
 }
 
+// Close frees up all resources used by the node.
 func (node *node) Close() {
 	if node.IsServer() {
 		node.server.Close()
