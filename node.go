@@ -38,17 +38,15 @@ func (node *node) connect() error {
 		}
 
 		node.client.init(connection)
-		go node.client.Main()
 		return nil
 	}
 
 	node.server.init(listener)
-	go node.server.Main()
 	return nil
 }
 
 func (node *node) Address() net.Addr {
-	if node.listener != nil {
+	if node.IsServer() {
 		return node.server.Address()
 	} else {
 		return node.client.Address()
@@ -56,9 +54,13 @@ func (node *node) Address() net.Addr {
 }
 
 func (node *node) Close() {
-	if node.listener != nil {
+	if node.IsServer() {
 		node.server.Close()
 	} else {
 		node.client.Close()
 	}
+}
+
+func (node *node) IsServer() bool {
+	return node.listener != nil
 }

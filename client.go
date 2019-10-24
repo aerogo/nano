@@ -3,6 +3,7 @@ package nano
 import (
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/aerogo/nano/packet"
@@ -33,24 +34,47 @@ func (client *client) init(connection *net.UDPConn) {
 	client.incoming = make(chan packetWithAddress)
 	go client.KeepAlive()
 	go client.Receiver()
+	go client.Main()
 }
 
 func (client *client) Main() {
+	defer fmt.Println("client.Main shutdown")
+
 	fmt.Printf("[%v] Successfully connected to server %v\n", client.connection.LocalAddr(), client.connection.RemoteAddr())
 	buffer := make([]byte, 4096)
 
 	for {
+		client.connection.SetReadDeadline(time.Now().Add(readTimeout))
 		n, address, err := client.connection.ReadFromUDP(buffer)
-		p := packet.Packet(buffer[:n])
-		client.incoming <- packetWithAddress{p, address}
 
-		if err != nil {
-			fmt.Printf("[%v] Error reading from UDP: %v\n", client.connection.LocalAddr(), err)
+		if n > 0 {
+			p := packet.Packet(buffer[:n])
+			client.incoming <- packetWithAddress{p, address}
 		}
+
+		if err == nil {
+			continue
+		}
+
+		netError, isNetError := err.(net.Error)
+
+		if isNetError && netError.Timeout() {
+			continue
+		}
+
+		// Go doesn't have a proper type for close errors,
+		// so we need to do a string check which is not optimal.
+		if !strings.Contains(err.Error(), "use of closed network connection") {
+			fmt.Printf("[server] Error reading from UDP: %v\n", err)
+		}
+
+		return
 	}
 }
 
 func (client *client) KeepAlive() {
+	defer fmt.Println("client.KeepAlive shutdown")
+
 	keepAlive := packet.New(packetAlive, nil)
 	client.Send(keepAlive)
 
@@ -69,6 +93,8 @@ func (client *client) KeepAlive() {
 }
 
 func (client *client) Receiver() {
+	defer fmt.Println("client.Receiver shutdown")
+
 	for {
 		select {
 		case msg := <-client.incoming:

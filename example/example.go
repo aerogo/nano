@@ -1,16 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/aerogo/nano"
 )
 
-var nodes [3]nano.Node
+var nodes [2]nano.Node
 
 func main() {
+	numGoroutines := runtime.NumGoroutine()
+
 	// Create nodes
 	for i := range nodes {
 		nodes[i] = nano.New(nano.Configuration{
@@ -27,4 +31,8 @@ func main() {
 	for _, node := range nodes {
 		node.Close()
 	}
+
+	runtime.GC()
+	leakedGoroutines := runtime.NumGoroutine() - numGoroutines
+	fmt.Printf("\n%d goroutines leaked\n", leakedGoroutines)
 }
