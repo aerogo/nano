@@ -27,16 +27,16 @@ func (client *client) Close() {
 	close(client.close)
 }
 
-func (client *client) Main() {
+func (client *client) init(connection *net.UDPConn) {
+	client.connection = connection
 	client.close = make(chan struct{})
 	client.incoming = make(chan packetWithAddress)
-	defer client.Close()
-
-	fmt.Printf("[%v] Successfully connected to server %v\n", client.connection.LocalAddr(), client.connection.RemoteAddr())
-
 	go client.KeepAlive()
 	go client.Receiver()
+}
 
+func (client *client) Main() {
+	fmt.Printf("[%v] Successfully connected to server %v\n", client.connection.LocalAddr(), client.connection.RemoteAddr())
 	buffer := make([]byte, 4096)
 
 	for {

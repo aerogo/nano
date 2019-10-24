@@ -37,12 +37,12 @@ func (node *node) connect() error {
 			return err
 		}
 
-		node.client.connection = connection
+		node.client.init(connection)
 		go node.client.Main()
 		return nil
 	}
 
-	node.server.listener = listener
+	node.server.init(listener)
 	go node.server.Main()
 	return nil
 }

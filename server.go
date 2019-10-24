@@ -18,6 +18,8 @@ const (
 type server struct {
 	listener *net.UDPConn
 	clients  *cache.Cache
+	incoming chan packetWithAddress
+	close    chan struct{}
 }
 
 func (server *server) Address() net.Addr {
@@ -25,23 +27,41 @@ func (server *server) Address() net.Addr {
 }
 
 func (server *server) Close() {
-	server.listener.Close()
+	close(server.close)
+}
+
+func (server *server) init(listener *net.UDPConn) {
+	server.listener = listener
+	server.close = make(chan struct{})
+	server.incoming = make(chan packetWithAddress)
+	server.clients = cache.New(keepAliveCleanTime)
+	go server.Receiver()
 }
 
 func (server *server) Main() {
-	server.clients = cache.New(keepAliveCleanTime)
-	defer server.Close()
 	buffer := make([]byte, 4096)
-	fmt.Println("[server] Ready to receive messages")
+	fmt.Println("[server] Ready")
 
 	for {
 		n, address, err := server.listener.ReadFromUDP(buffer)
-
 		p := packet.Packet(buffer[:n])
-		server.Receive(address, p)
+		server.incoming <- packetWithAddress{p, address}
 
 		if err != nil {
 			fmt.Printf("[server] Error reading from UDP: %v\n", err)
+		}
+	}
+}
+
+func (server *server) Receiver() {
+	for {
+		select {
+		case msg := <-server.incoming:
+			server.Receive(msg.address, msg.packet)
+
+		case <-server.close:
+			server.listener.Close()
+			return
 		}
 	}
 }

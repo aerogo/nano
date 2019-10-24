@@ -8,18 +8,23 @@ import (
 	"github.com/aerogo/nano"
 )
 
-const (
-	nodeCount = 3
-)
+var nodes [3]nano.Node
 
 func main() {
-	for i := 0; i < nodeCount; i++ {
-		nano.New(nano.Configuration{
+	// Create nodes
+	for i := range nodes {
+		nodes[i] = nano.New(nano.Configuration{
 			Port: 5000,
 		})
 	}
 
+	// Wait for termination
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
+
+	// Close nodes
+	for _, node := range nodes {
+		node.Close()
+	}
 }
