@@ -15,11 +15,6 @@ type client struct {
 	close      chan struct{}
 }
 
-type packetWithAddress struct {
-	packet  packet.Packet
-	address *net.UDPAddr
-}
-
 func (client *client) Address() net.Addr {
 	return client.connection.LocalAddr()
 }
@@ -42,20 +37,24 @@ func (client *client) Main() {
 	defer close(client.incoming)
 
 	fmt.Printf("[%v] Successfully connected to server %v\n", client.connection.LocalAddr(), client.connection.RemoteAddr())
-	buffer := make([]byte, 4096)
+
+	var (
+		length  int
+		address *net.UDPAddr
+		buffer  = make([]byte, 4096)
+	)
 
 	for {
 		err := client.connection.SetReadDeadline(time.Now().Add(readTimeout))
 
 		if err != nil {
-			fmt.Printf("[%v] Error setting read deadline: %v\n", client.connection.LocalAddr(), err)
-			return
+			goto errorHandler
 		}
 
-		n, address, err := client.connection.ReadFromUDP(buffer)
+		length, address, err = client.connection.ReadFromUDP(buffer)
 
-		if n > 0 {
-			p := packet.Packet(buffer[:n])
+		if length > 0 {
+			p := packet.Packet(buffer[:length])
 			client.incoming <- packetWithAddress{p, address}
 		}
 
@@ -63,6 +62,7 @@ func (client *client) Main() {
 			continue
 		}
 
+	errorHandler:
 		netError, isNetError := err.(net.Error)
 
 		if isNetError && netError.Timeout() {
