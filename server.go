@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	keepAliveTime      = 30 * time.Second
-	keepAliveCleanTime = 1 * time.Minute
+	keepAliveSendInterval = 5 * time.Second
+	keepAliveTimeout      = 2 * keepAliveSendInterval
+	keepAliveCleanTime    = 1 * time.Minute
 )
 
 type server struct {
@@ -35,7 +36,6 @@ func (server *server) Main() {
 
 	for {
 		n, address, err := server.listener.ReadFromUDP(buffer)
-		fmt.Printf("[server] %s sent %d bytes\n", address, n)
 
 		p := packet.Packet(buffer[:n])
 		server.Receive(address, p)
@@ -70,10 +70,8 @@ func (server *server) Broadcast(p packet.Packet) error {
 
 // Receive handles received packets.
 func (server *server) Receive(address *net.UDPAddr, msg packet.Packet) {
-	fmt.Printf("[server] %s message of type %d: %s\n", address, msg.Type(), msg.Data())
-
 	// Refresh keep-alive timer
-	server.clients.Set(address.String(), address, keepAliveTime)
+	server.clients.Set(address.String(), address, keepAliveTimeout)
 
 	switch msg.Type() {
 	case packetAlive:

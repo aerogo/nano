@@ -9,6 +9,6 @@ type Configuration struct {
 	// Directory includes the path to the namespaces stored on the disk.
 	Directory string
 
-	// Hosts represents a list of node addresses that this node should connect to.
+	// Hosts represents a whitelist of addresses allowed to access the database.
 	Hosts []string
 }
