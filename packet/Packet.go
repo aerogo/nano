@@ -5,8 +5,8 @@ const (
 	BufferSize = 65535
 
 	// MaxDataLength is set to the maximum data length of 65,524 bytes.
-	// It equals BufferSize - 8 (UDP header) - 1 (type) - 2 (length of data).
-	MaxDataLength = BufferSize - 8 - 1 - 2
+	// It equals BufferSize - 20 (IP header) - 8 (UDP header) - 1 (type).
+	MaxDataLength = BufferSize - 20 - 8 - 1
 )
 
 // Packet is a byte slice abstraction to send types of messages

@@ -1,4 +1,4 @@
-package nano
+package cluster
 
 import (
 	"net"
@@ -6,7 +6,8 @@ import (
 	"github.com/aerogo/nano/packet"
 )
 
-type packetWithAddress struct {
+// Message represents a received message in the cluster.
+type Message struct {
 	packet  packet.Packet
 	address *net.UDPAddr
 }

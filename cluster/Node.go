@@ -1,4 +1,4 @@
-package nano
+package cluster
 
 import (
 	"fmt"
@@ -9,36 +9,24 @@ import (
 	"github.com/aerogo/nano/packet"
 )
 
-const (
-	readTimeout = 5 * time.Minute
-)
-
 // Node is a general-purpose node in the cluster.
-// It can act either as a server or as a client.
-type Node interface {
-	Broadcast(msg packet.Packet) error
-	Close()
+type Node struct {
+	reader    *net.UDPConn
+	writer    *net.UDPConn
+	address   *net.UDPAddr
+	incoming  chan Message
+	close     chan struct{}
+	onMessage func(*net.UDPAddr, packet.Packet)
 }
 
-// node can dynamically switch between client and server mode.
-type node struct {
-	reader   *net.UDPConn
-	writer   *net.UDPConn
-	address  *net.UDPAddr
-	incoming chan packetWithAddress
-	close    chan struct{}
-	config   Configuration
-}
-
-// New creates a new nano node.
-func New(config Configuration) Node {
-	node := &node{
-		config:   config,
+// New creates a new cluster node.
+func New(port int, messageHandler func(*net.UDPAddr, packet.Packet)) *Node {
+	node := &Node{
 		close:    make(chan struct{}),
-		incoming: make(chan packetWithAddress),
+		incoming: make(chan Message),
 	}
 
-	err := node.init()
+	err := node.init(port)
 
 	if err != nil {
 		panic(err)
@@ -48,10 +36,10 @@ func New(config Configuration) Node {
 }
 
 // init initializes the node.
-func (node *node) init() error {
+func (node *Node) init(port int) error {
 	var err error
 
-	host := fmt.Sprintf("224.0.0.1:%d", node.config.Port)
+	host := fmt.Sprintf("224.0.0.1:%d", port)
 	node.address, err = net.ResolveUDPAddr("udp", host)
 
 	if err != nil {
@@ -88,7 +76,8 @@ func (node *node) init() error {
 	return nil
 }
 
-func (node *node) read() {
+// read reads the packets and sends them to the "incoming" channel.
+func (node *Node) read() {
 	defer fmt.Println("node.read shutdown")
 	defer close(node.incoming)
 
@@ -116,7 +105,7 @@ func (node *node) read() {
 
 		if length > 0 {
 			p := packet.Packet(buffer[:length])
-			node.incoming <- packetWithAddress{p, address}
+			node.incoming <- Message{p, address}
 		}
 
 		if err == nil {
@@ -140,7 +129,8 @@ func (node *node) read() {
 	}
 }
 
-func (node *node) receive() {
+// receive processes messages from the "incoming" channel.
+func (node *Node) receive() {
 	defer fmt.Println("node.receiver shutdown")
 
 	for {
@@ -155,21 +145,13 @@ func (node *node) receive() {
 	}
 }
 
-func (node *node) Broadcast(msg packet.Packet) error {
+// Broadcast sends a packet to the whole cluster.
+func (node *Node) Broadcast(msg packet.Packet) error {
 	_, err := node.writer.Write(msg)
 	return err
 }
 
-func (node *node) onMessage(address *net.UDPAddr, msg packet.Packet) {
-	// fmt.Printf("[%v] Received message from %v of type %d: %s\n", node.reader.LocalAddr(), address, msg.Type(), msg.Data())
-
-	switch msg.Type() {
-	case packetAlive:
-		fmt.Println("server is alive")
-	}
-}
-
 // Close frees up all resources used by the node.
-func (node *node) Close() {
+func (node *Node) Close() {
 	close(node.close)
 }

@@ -1,25 +1,23 @@
-package nano_test
+package cluster_test
 
 import (
 	"runtime"
 	"testing"
 
-	"github.com/aerogo/nano"
+	"github.com/aerogo/nano/cluster"
 	"github.com/akyoto/assert"
 )
 
 var (
-	nodes  [2]nano.Node
-	config = nano.Configuration{
-		Port: 5000,
-	}
+	nodes [2]*cluster.Node
+	port  = 5000
 )
 
 func TestGoroutineLeak(t *testing.T) {
 	numGoroutines := runtime.NumGoroutine()
 
 	for i := range nodes {
-		nodes[i] = nano.New(config)
+		nodes[i] = cluster.New(port, nil)
 	}
 
 	for _, node := range nodes {
