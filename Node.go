@@ -16,20 +16,21 @@ type Node interface {
 
 type node struct {
 	*cluster.Node
+	config Configuration
 }
 
 // New creates a new cluster node.
 func New(config Configuration) Node {
-	return &node{
-		Node: cluster.New(config.Port, onMessage),
-	}
+	node := &node{config: config}
+	node.Node = cluster.New(config.Port, node.onMessage)
+	return node
 }
 
 // Namespace
 func (node *node) Namespace(name string) {
 }
 
-func onMessage(address *net.UDPAddr, p packet.Packet) {
+func (node *node) onMessage(address *net.UDPAddr, p packet.Packet) {
 	switch p.Type() {
 	case packetAlive:
 		println("server is alive")
