@@ -16,14 +16,19 @@ type Node struct {
 	address   *net.UDPAddr
 	incoming  chan Message
 	close     chan struct{}
-	onMessage func(*net.UDPAddr, packet.Packet)
+	onMessage MessageHandler
 }
 
 // New creates a new cluster node.
-func New(port int, messageHandler func(*net.UDPAddr, packet.Packet)) *Node {
+func New(port int, messageHandler MessageHandler) *Node {
+	if messageHandler == nil {
+		messageHandler = func(*net.UDPAddr, packet.Packet) {}
+	}
+
 	node := &Node{
-		close:    make(chan struct{}),
-		incoming: make(chan Message),
+		close:     make(chan struct{}),
+		incoming:  make(chan Message),
+		onMessage: messageHandler,
 	}
 
 	err := node.init(port)

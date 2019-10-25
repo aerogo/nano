@@ -2,6 +2,7 @@ package nano
 
 import (
 	"net"
+	"sync"
 
 	"github.com/aerogo/nano/cluster"
 	"github.com/aerogo/nano/packet"
@@ -11,12 +12,13 @@ import (
 type Node interface {
 	Broadcast(msg packet.Packet) error
 	Close()
-	Namespace(string)
+	Namespace(string) Namespace
 }
 
 type node struct {
 	*cluster.Node
-	config Configuration
+	namespaces sync.Map
+	config     Configuration
 }
 
 // New creates a new cluster node.
@@ -26,8 +28,22 @@ func New(config Configuration) Node {
 	return node
 }
 
-// Namespace
-func (node *node) Namespace(name string) {
+// Namespace returns the namespace with the given name.
+func (node *node) Namespace(name string) Namespace {
+	obj, loaded := node.namespaces.LoadOrStore(name, nil)
+
+	if !loaded {
+		namespace, err := newNamespace(node, name)
+
+		if err != nil {
+			panic(err)
+		}
+
+		node.namespaces.Store(name, namespace)
+		return namespace
+	}
+
+	return obj.(*namespace)
 }
 
 func (node *node) onMessage(address *net.UDPAddr, p packet.Packet) {
