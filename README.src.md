@@ -13,6 +13,17 @@ BenchmarkCollectionDelete-12            123748969                9.50 ns/op     
 BenchmarkCollectionAll-12                1403905               859 ns/op            2144 B/op          2 allocs/op
 ```
 
+## API
+
+```go
+// Initialization
+node := nano.New(config)
+google := node.NewNamespace("google", types...)
+
+// Usage
+google.Set("User", &User{Name: "Eduard Urbach"})
+```
+
 ## Features
 
 * Low latency commands
