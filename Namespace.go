@@ -13,6 +13,8 @@ type Namespace interface {
 	Clear(collection string)
 	ClearAll()
 	Close()
+	Collection(name string) Collection
+	Count(collection string) uint64
 	Delete(collection string, key string) bool
 	Exists(collection string, key string) bool
 	Get(collection string, key string) (interface{}, error)
@@ -79,26 +81,14 @@ func (ns *namespace) Close() {
 	})
 }
 
-// RegisterTypes expects a list of pointers and will look up the types
-// of the given pointers. These types will be registered so that collections
-// can store data using the given type. Note that nil pointers are acceptable.
-func (ns *namespace) RegisterTypes(types ...interface{}) *namespace {
-	for _, example := range types {
-		typeInfo := reflect.TypeOf(example)
-
-		if typeInfo.Kind() == reflect.Ptr {
-			typeInfo = typeInfo.Elem()
-		}
-
-		ns.types.Store(typeInfo.Name(), typeInfo)
-	}
-
-	return ns
+// Count returns the number of objects stored in the given collection.
+func (ns *namespace) Count(collection string) uint64 {
+	return ns.Collection(collection).Count()
 }
 
 // Collection returns the collection with the given name.
 func (ns *namespace) Collection(name string) Collection {
-	obj, loaded := ns.collections.LoadOrStore(name, nil)
+	obj, loaded := ns.collections.Load(name)
 
 	if !loaded {
 		collection := newCollection(ns, name)
@@ -157,6 +147,23 @@ func (ns *namespace) Prefetch() {
 	})
 
 	wg.Wait()
+}
+
+// RegisterTypes expects a list of pointers and will look up the types
+// of the given pointers. These types will be registered so that collections
+// can store data using the given type. Note that nil pointers are acceptable.
+func (ns *namespace) RegisterTypes(types ...interface{}) *namespace {
+	for _, example := range types {
+		typeInfo := reflect.TypeOf(example)
+
+		if typeInfo.Kind() == reflect.Ptr {
+			typeInfo = typeInfo.Elem()
+		}
+
+		ns.types.Store(typeInfo.Name(), typeInfo)
+	}
+
+	return ns
 }
 
 // Set sets the value for the key.

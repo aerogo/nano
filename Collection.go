@@ -22,7 +22,7 @@ type Collection interface {
 	All() chan interface{}
 	Clear()
 	Close()
-	Count() int64
+	Count() uint64
 	Delete(key string) bool
 	Exists(key string) bool
 	Get(key string) (interface{}, error)
@@ -38,7 +38,7 @@ type collection struct {
 	node             *node
 	dirty            chan struct{}
 	close            chan struct{}
-	count            int64
+	count            uint64
 	flushMutex       sync.Mutex
 	typ              reflect.Type
 }
@@ -49,7 +49,7 @@ func newCollection(ns *namespace, name string) *collection {
 		ns:    ns,
 		node:  ns.node,
 		name:  name,
-		dirty: make(chan struct{}),
+		dirty: make(chan struct{}, 1),
 		close: make(chan struct{}),
 	}
 
@@ -72,7 +72,7 @@ func newCollection(ns *namespace, name string) *collection {
 
 // All returns a channel of all objects in the collection.
 func (collection *collection) All() chan interface{} {
-	channel := make(chan interface{})
+	channel := make(chan interface{}, collection.Count())
 
 	go func() {
 		collection.data.Range(func(key, value interface{}) bool {
@@ -84,14 +84,6 @@ func (collection *collection) All() chan interface{} {
 	}()
 
 	return channel
-}
-
-// Count gives you a rough estimate of how many elements are in the collection.
-// It DOES NOT GUARANTEE that the returned number is the actual number of elements.
-// A good use for this function is to preallocate slices with the given capacity.
-// In the future, this function could possibly return the exact number of elements.
-func (collection *collection) Count() int64 {
-	return atomic.LoadInt64(&collection.count)
 }
 
 // Close terminates the syncing goroutine and waits for all flush calls to finish.
@@ -106,12 +98,17 @@ func (collection *collection) Close() {
 	}
 }
 
+// Count returns how many elements are in the collection.
+func (collection *collection) Count() uint64 {
+	return atomic.LoadUint64(&collection.count)
+}
+
 // Get returns the value for the given key.
 func (collection *collection) Get(key string) (interface{}, error) {
 	value, ok := collection.data.Load(key)
 
 	if !ok {
-		return value, errors.New("Key not found: " + key)
+		return value, ErrKeyNotFound
 	}
 
 	return value, nil
@@ -130,13 +127,20 @@ func (collection *collection) GetMany(keys []string) []interface{} {
 
 // set is the internally used function to store a value for a key.
 func (collection *collection) set(key string, value interface{}) {
+	_, exists := collection.data.Load(key)
+
+	if !exists {
+		atomic.AddUint64(&collection.count, 1)
+	}
+
 	// It's important to store the timestamp BEFORE storing the data
 	collection.lastModification.Store(key, time.Now().UnixNano())
 	collection.data.Store(key, value)
 
-	// if collection.node.IsServer() {
-	// 	collection.dirty <- struct{}{}
-	// }
+	select {
+	case collection.dirty <- struct{}{}:
+	default:
+	}
 }
 
 // Set sets the value for the key.
@@ -173,12 +177,21 @@ func (collection *collection) Set(key string, value interface{}) {
 }
 
 // delete is the internally used command to delete a key.
-func (collection *collection) delete(key string) {
+func (collection *collection) delete(key string) bool {
+	_, exists := collection.data.Load(key)
+
 	collection.data.Delete(key)
 
-	// if collection.node.IsServer() && len(collection.dirty) == 0 {
-	// 	collection.dirty <- true
-	// }
+	if exists {
+		atomic.AddUint64(&collection.count, ^uint64(0))
+	}
+
+	select {
+	case collection.dirty <- struct{}{}:
+	default:
+	}
+
+	return exists
 }
 
 // Delete deletes a key from the collection.
@@ -200,9 +213,7 @@ func (collection *collection) Delete(key string) bool {
 	// 	collection.node.Broadcast(msg)
 	// }
 
-	_, exists := collection.data.Load(key)
-	collection.delete(key)
-	return exists
+	return collection.delete(key)
 }
 
 // Clear deletes all objects from the collection.
@@ -212,11 +223,12 @@ func (collection *collection) Clear() {
 		return true
 	})
 
-	// if len(collection.dirty) == 0 {
-	// 	collection.dirty <- struct{}{}
-	// }
+	atomic.StoreUint64(&collection.count, 0)
 
-	atomic.StoreInt64(&collection.count, 0)
+	select {
+	case collection.dirty <- struct{}{}:
+	default:
+	}
 }
 
 // Exists returns whether or not the key exists.
@@ -233,7 +245,7 @@ func (collection *collection) flush() error {
 	newFilePath := path.Join(os.TempDir(), collection.name+".new")
 	oldFilePath := path.Join(collection.ns.root, collection.name+".dat")
 
-	file, err := os.OpenFile(newFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(newFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|os.O_EXCL, 0644)
 
 	if err != nil {
 		return err
@@ -296,7 +308,6 @@ func (collection *collection) writeTo(writer io.Writer, sorted bool) error {
 		})
 	}
 
-	atomic.StoreInt64(&collection.count, int64(len(records)))
 	encoder := json.NewEncoder(writer)
 
 	for _, record := range records {
@@ -340,15 +351,15 @@ func (collection *collection) writeToDisk() {
 			time.Sleep(diskWriteDelay)
 
 		case <-collection.close:
-			if len(collection.dirty) > 0 {
-				err := collection.flush()
-
-				if err != nil {
-					fmt.Println("Error writing collection", collection.name, "to disk", err)
-				}
+			if len(collection.dirty) == 0 {
+				return
 			}
 
-			return
+			err := collection.flush()
+
+			if err != nil {
+				fmt.Println("Error writing collection", collection.name, "to disk", err)
+			}
 		}
 	}
 }
@@ -374,11 +385,11 @@ func (collection *collection) readFrom(stream io.Reader) error {
 	var (
 		key       string
 		reader    = bufio.NewReader(stream)
-		lineCount = 0
+		lineCount = uint64(0)
 	)
 
 	defer func() {
-		atomic.StoreInt64(&collection.count, int64(lineCount/2))
+		atomic.StoreUint64(&collection.count, lineCount/2)
 	}()
 
 	for {
