@@ -10,12 +10,13 @@ import (
 	"github.com/akyoto/assert"
 )
 
-var (
-	nodes [2]*cluster.Node
-	port  = 5000
+const (
+	nodeCount = 2
+	port      = 5000
 )
 
 func TestBroadcast(t *testing.T) {
+	nodes := make([]*cluster.Node, nodeCount)
 	waitGroup := sync.WaitGroup{}
 
 	for i := range nodes {

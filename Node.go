@@ -30,7 +30,7 @@ func New(config Configuration) Node {
 
 // Namespace returns the namespace with the given name.
 func (node *node) Namespace(name string) Namespace {
-	obj, loaded := node.namespaces.LoadOrStore(name, nil)
+	obj, loaded := node.namespaces.Load(name)
 
 	if !loaded {
 		namespace, err := newNamespace(node, name)
@@ -50,5 +50,8 @@ func (node *node) onMessage(address *net.UDPAddr, p packet.Packet) {
 	switch p.Type() {
 	case packetAlive:
 		println("server is alive")
+
+	default:
+		println("unknown packet")
 	}
 }
